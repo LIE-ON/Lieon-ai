@@ -11,23 +11,23 @@ class ESN(nn.Module):
     Deep Echo State Network (DeepESN): A Brief Survey - Gallicchio, Micheli 2017
 
     Args:
-        input_size: The number of expected features in the input x.
+        ! input_size: The number of expected features in the input x.
         hidden_size: The number of features in the hidden state h.
-        output_size: The number of expected features in the output y.
+        ! output_size: The number of expected features in the output y.
         num_layers: Number of recurrent layers. Default: 1
-        nonlinearity: The non-linearity to use ['tanh'|'relu'|'id'].
+        ! nonlinearity: The non-linearity to use ['tanh'|'relu'|'id'].
             Default: 'tanh'
         batch_first: If ``True``, then the input and output tensors are provided
             as (batch, seq, feature). Default: ``False``
-        leaking_rate: Leaking rate of reservoir's neurons. Default: 1
-        spectral_radius: Desired spectral radius of recurrent weight matrix.
+        ! leaking_rate: Leaking rate of reservoir's neurons. Default: 1
+        ! spectral_radius: Desired spectral radius of recurrent weight matrix.
             Default: 0.9
         w_ih_scale: Scale factor for first layer's input weights (w_ih_l0). It
             can be a number or a tensor of size '1 + input_size' and first element
             is the bias' scale factor. Default: 1
         lambda_reg: Ridge regression's shrinkage parameter. Default: 1
         density: Recurrent weight matrix's density. Default: 1
-        w_io: If 'True', then the network uses trainable input-to-output
+        ! w_io: If 'True', then the network uses trainable input-to-output
             connections. Default: ``False``
         readout_training: Readout's traning algorithm ['gd'|'svd'|'cholesky'|'inv'].
             If 'gd', gradients are accumulated during backward
