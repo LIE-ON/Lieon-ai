@@ -18,7 +18,7 @@ def extract_formants(audio_path):  # librosa 사용하지 않으므로 바로 au
     formant = call(sound, "To Formant (burg)", 0.025, 5, 5500, 0.02, 50)
     formants = {}
     for i in range(1, 6):
-        formants[f"formant_{i}"] = np.array([call(formant, "Get value at time", i, t, 'Hz') for t in sound.ts()])
+        formants[f"formant_{i}"] = np.array([call(formant, "Get value at time", i, t, 'Hertz') for t in sound.ts()])
     return formants
 
 

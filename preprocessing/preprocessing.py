@@ -14,11 +14,11 @@ y, sr = librosa.load(audio_path, sr=None)  # 우리 데이터 sr에 맞게 값 �
 
 
 # Feature Extraction
-pitch = extract_f0(y, sr)
-formants = extract_formants(audio_path)
-spectral_flux = extract_spectral_flux(y, sr)
-spectral_entropy = extract_spectral_entropy(y, sr)
-speech_rate, pause_durations = extract_prosody(y, sr)
+pitch = features.extract_f0(y, sr)
+formants = features.extract_formants(audio_path)
+spectral_flux = features.extract_spectral_flux(y, sr)
+spectral_entropy = features.extract_spectral_entropy(y, sr)
+speech_rate, pause_durations = features.extract_prosody(y, sr)
 
 # Display extracted features
 print(f'Pitch (f0): {pitch}')
