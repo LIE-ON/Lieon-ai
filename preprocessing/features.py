@@ -12,6 +12,7 @@ from parselmouth.praat import call
 from scipy.signal import find_peaks, lfilter, hamming
 from scipy.io import wavfile
 from scipy.fftpack import fft
+import os
 
 
 # Fundamental Frequency (f0) - 검증 완료, 그러나 실시간 처리를 위한 최적화 필요
@@ -22,40 +23,39 @@ def extract_f0(y, sr):
 
 
 """
-The code below is no longer used.
-------------------------------------------------------------
 # Formants using Parselmouth
+def extract_formants_praat(audio_file):
+    try:
+        # 오디오 파일을 Sound 객체로 변환
+        Sound = parselmouth.Sound(audio_file)
 
-def extract_formants(audio_file):
-    ""
-    Extracts the first three formants (F1, F2, F3) from the given audio file.
+        # Formant 추출
+        formant = Sound.to_formant_burg(time_step=0.1)
 
-    Args:
-    audio_file (str): Path to the audio file.
+        # Pitch 추출
+        pitch = Sound.to_pitch()
 
-    Returns:
-    list of tuples: Each tuple contains the time, F1, F2, and F3 values.
-    ""
-    # Load the audio file
-    sound = parselmouth.Sound(audio_file)
+        # Formant 추출에 사용된 시간을 데이터프레임으로 만들기
+        df = pd.DataFrame({"times": formant.ts()})
 
-    # Analyze formants
-    formant = call(sound, "To Formant (burg)", 0.0025, 5, 5500, 0.025, 50)
+        # F1부터 F5까지의 값을 각 시간에 대해 추출
+        for idx in range(1, 6):  # F1 to F5
+            df[f'F{idx}'] = df['times'].apply(lambda x: formant.get_value_at_time(formant_number=idx, time=x))
 
-    # Gather formant data
-    num_points = call(formant, "Get number of frames")
-    formant_data = []
-    for i in range(1, num_points + 1):
-        t = call(formant, "Get time from frame number", i)
-        f1 = call(formant, "Get value at time", 1, t, 'Hertz', 'Linear')
-        f2 = call(formant, "Get value at time", 2, t, 'Hertz', 'Linear')
-        f3 = call(formant, "Get value at time", 3, t, 'Hertz', 'Linear')
-        formant_data.append((t, f1, f2, f3))
+        # Pitch값 추출 (F0)
+        df['F0(pitch)'] = df['times'].apply(lambda x: pitch.get_value_at_time(time=x))
+        # 파일 이름 추가
+        df['filename'] = os.path.basename(audio_file)
 
-    return formant_data
+        return df
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return pd.DataFrame()  # 오류가 발생하면 빈 데이터프레임 반환
 """
 
-# low level로 구현한 formant 추출 함수 - 검증 완료, 그러나 너무 느림
+
+# low level로 구현한 formant 추출 함수 - 검증 완료, 그러나 너무 느림 (Python 기반)
 def extract_formants_for_frames(audio_file, frame_length=0.025, hop_length=0.01):
     sample_rate, signal = wavfile.read(audio_file)
     if len(signal.shape) == 2:
@@ -96,11 +96,12 @@ def extract_formants_for_frames(audio_file, frame_length=0.025, hop_length=0.01)
 def extract_spectral_flux(y, sr):
     S = np.abs(librosa.stft(y))  # STFT 계산
     flux = np.sqrt(np.sum(np.diff(S, axis=1)**2, axis=0))  # 스펙트럼 간의 차이 계산
+    flux = np.append(flux, flux[-1])  # row 수 맞추기 위해 마지막 값 복제
     return flux
 
 
 # Spectral Entropy - 검증 완료
-def extract_spectral_entropy(y, sr, n_fft=2048, hop_length=1024):
+def extract_spectral_entropy(y, sr, n_fft=2048, hop_length=512):
     S = np.abs(librosa.stft(y, n_fft=n_fft, hop_length=hop_length)) ** 2
     ps = S / np.sum(S, axis=0)
     spectral_entropy = -np.sum(ps * np.log(ps + 1e-10), axis=0)
@@ -108,15 +109,46 @@ def extract_spectral_entropy(y, sr, n_fft=2048, hop_length=1024):
 
 
 # Prosody: Speech Rate and Pause Duration
-def extract_prosody(y, sr):
-    intervals = librosa.effects.split(y, top_db=20)
-    pause_durations = [(intervals[i][0] - intervals[i - 1][1]) / sr for i in range(1, len(intervals))]
-    speech_rate = len(intervals) / (sum([end - start for start, end in intervals]) / sr)
-    return speech_rate, pause_durations
+def extract_prosody_features(y, sr, frame_length=0.025, hop_length=0.01):
+    # Frame parameters
+    n_frame_length = int(frame_length * sr)
+    n_hop_length = int(hop_length * sr)
+    n_frames = 1 + int((len(y) - n_frame_length) / n_hop_length)
+
+    # Prepare to collect prosody features per frame
+    speech_rates = []
+    average_pauses = []
+
+    for i in range(n_frames):
+        start_sample = i * n_hop_length
+        end_sample = start_sample + n_frame_length
+        frame = y[start_sample:end_sample]
+
+        # Detect silent and non-silent intervals within the frame
+        intervals = librosa.effects.split(frame, top_db=20)
+
+        # Calculate speech rate for the frame
+        speech_rate = len(intervals) / (frame_length if frame_length > 0 else 1)
+        speech_rates.append(speech_rate)
+
+        # Calculate pause durations for the frame
+        if len(intervals) > 1:
+            pause_durations = [(intervals[j][0] - intervals[j - 1][1]) / sr for j in range(1, len(intervals))]
+            average_pause = np.mean(pause_durations) if pause_durations else 0
+        else:
+            average_pause = 0
+
+        average_pauses.append(average_pause)
+
+    """
+    return 후 활용 예시 : speech_rates, average_pauses = extract_prosody_features(y, sr)
+    """
+    return np.array(speech_rates), np.array(average_pauses)
+
 
 # MFCC - 검증 완료 (n_mfcc는 추출할 feature vector의 개수, 보통 12, 13, 20 등을 사용)
 # n_fft, hop_length, win_length 등의 파라미터 추가 가능 - 성능이 좋지 않으면 이 파라미터 건드려 볼 것
 def extract_mfcc(y, sr):
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, n_fft=2048, hop_length=1024, fmin=0, fmax=8000)
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20, n_fft=2048, hop_length=512, fmin=0, fmax=22050)
     mfcc_df = pd.DataFrame(mfcc.T, columns=[f'MFCC_{i + 1}' for i in range(mfcc.shape[0])]) # DataFrame으로 변환
     return mfcc_df
