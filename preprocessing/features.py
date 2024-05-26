@@ -49,7 +49,7 @@ def extract_f0_pyworld(y, sr, frame_period=512 / 44100 * 1000):
     # Convert to a DataFrame and ensure the row count matches
     # f0 = pad_to_length(f0, target_rows)
     # times = pad_to_length(t, target_rows)
-    f0_df = pd.DataFrame(f0)
+    f0_df = pd.DataFrame(f0, columns=['F0'])
     return f0_df
 
 

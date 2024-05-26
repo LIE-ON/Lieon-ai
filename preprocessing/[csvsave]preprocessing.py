@@ -21,10 +21,39 @@ class WAVDataset(Dataset):
 
     def __getitem__(self, idx):
         wav_path = self.wav_files[idx]
-        waveform, sample_rate = librosa.load(wav_path, sr=44100)  # 16kHz로 샘플링
-        # TODO: preprocessing 과정 입력할 것
-        # TODO: 추출된 feature 병합한 dataframe을 concated_df로 선언 후, return
+        y, sr = librosa.load(wav_path, sr=44100)
+
+        # preprocessing 과정
+        mfcc = features.extract_mfcc(y, sr)
+        pitch = features.extract_pitch(y, sr)
+        f0_pyworld = features.extract_f0_pyworld(y, sr)
+        # formants = features.extract_formants_for_frames(audio_path)
+        spectral_flux = features.extract_spectral_flux(y, sr)
+        spectral_entropy = features.extract_spectral_entropy(y, sr)
+
+        # 추출된 feature 병합한 dataframe을 concated_df로 선언 후, return
+        # 피처 병합
+        features_dict = {
+            'mfcc': mfcc,
+            'pitch': pitch,
+            'f0_pyworld': f0_pyworld,
+            'spectral_flux': spectral_flux,
+            'spectral_entropy': spectral_entropy
+        }
+        concated_df = self.merge_features(features_dict)
+
         return torch.tensor(concated_df, dtype=torch.float32)
+
+    def merge_features(self, features_dict):
+        # 피처들을 하나의 데이터프레임으로 병합
+        df_list = []
+        for key, df in features_dict.items():
+            # 각 DataFrame의 행 수를 통일
+            df_list.append(df)
+
+        # 열 방향으로 병합
+        concated_df = pd.concat(df_list, axis=1)
+        return concated_df
 
 def split_dataset(dataset, train_ratio=0.8):
     train_size = int(train_ratio * len(dataset))  # 트레인 셋 비율
