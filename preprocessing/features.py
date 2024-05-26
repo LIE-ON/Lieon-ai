@@ -109,46 +109,6 @@ def extract_spectral_entropy(y, sr, n_fft=2048, hop_length=512):
     return spectral_entropy_df
 
 
-# Prosody: Speech Rate and Pause Duration
-# TODO : 함수 작동하도록 수정 필요
-def extract_prosody_features(y, sr, frame_length=0.025, hop_length=0.01):
-    # Frame parameters
-    n_frame_length = int(frame_length * sr)
-    n_hop_length = int(hop_length * sr)
-    n_frames = 1 + int((len(y) - n_frame_length) / n_hop_length)
-
-    # Prepare to collect prosody features per frame
-    speech_rates = []
-    average_pauses = []
-
-    for i in range(n_frames):
-        start_sample = i * n_hop_length
-        end_sample = start_sample + n_frame_length
-        frame = y[start_sample:end_sample]
-
-        # Detect silent and non-silent intervals within the frame
-        intervals = librosa.effects.split(frame, top_db=20)
-
-        # Calculate speech rate for the frame
-        speech_rate = len(intervals) / (frame_length if frame_length > 0 else 1)
-        speech_rates.append(speech_rate)
-
-        # Calculate pause durations for the frame
-        if len(intervals) > 1:
-            pause_durations = [(intervals[j][0] - intervals[j - 1][1]) / sr for j in range(1, len(intervals))]
-            average_pause = np.mean(pause_durations) if pause_durations else 0
-        else:
-            average_pause = 0
-
-        average_pauses.append(average_pause)
-
-    speech_rates = pd.DataFrame(speech_rates, columns=['Speech_Rate'])
-    average_pauses = pd.DataFrame(average_pauses, columns=['Average_Pause'])
-
-    # return 후 활용 예시 : speech_rates, average_pauses = extract_prosody_features(y, sr)
-    return speech_rates, average_pauses
-
-
 """
 # Fundamental Frequency (f0) - 검증 완료, 그러나 실시간 처리를 위한 최적화 필요
 def extract_f0(y, sr):
