@@ -45,7 +45,6 @@ class WAVDataset(Dataset):
         mfcc = features.extract_mfcc(y, sr)
         pitch = features.extract_pitch(y, sr)
         f0_pyworld = features.extract_f0_pyworld(y, sr)
-        # formants = features.extract_formants_for_frames(audio_path)
         spectral_flux = features.extract_spectral_flux(y, sr)
         spectral_entropy = features.extract_spectral_entropy(y, sr)
 

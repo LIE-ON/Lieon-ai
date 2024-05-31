@@ -13,6 +13,7 @@ from scipy.io import wavfile
 from scipy.fftpack import fft
 import os
 import pyworld as pw
+from concurrent.futures import ThreadPoolExecutor
 
 
 # MFCC - 검증 완료 (n_mfcc는 추출할 feature vector의 개수, 보통 12, 13, 20 등을 사용)
@@ -39,7 +40,6 @@ def extract_pitch(y, sr, n_fft=2048, hop_length=512):
     pitch_df = pd.DataFrame(pitch, columns=['Pitch'])
     return pitch_df
 
-
 def extract_f0_pyworld(y, sr, frame_period=512 / 44100 * 1000):
     y = y.astype(np.float64)
 
@@ -52,7 +52,37 @@ def extract_f0_pyworld(y, sr, frame_period=512 / 44100 * 1000):
     f0_df = pd.DataFrame(f0, columns=['F0'])
     return f0_df
 
+# Spectral Flux - 검증 완료
+def extract_spectral_flux(y, sr):
+    S = np.abs(librosa.stft(y))  # STFT 계산
+    flux = np.sqrt(np.sum(np.diff(S, axis=1)**2, axis=0))  # 스펙트럼 간의 차이 계산
+    flux = np.append(flux, flux[-1])  # row 수 맞추기 위해 마지막 값 복제
+    flux_df = pd.DataFrame(flux, columns=['Spectral_Flux'])
+    return flux_df
 
+# Spectral Entropy - 검증 완료
+def extract_spectral_entropy(y, sr, n_fft=2048, hop_length=512):
+    S = np.abs(librosa.stft(y, n_fft=n_fft, hop_length=hop_length)) ** 2
+    ps = S / np.sum(S, axis=0)
+    spectral_entropy = -np.sum(ps * np.log(ps + 1e-10), axis=0)
+    spectral_entropy_df = pd.DataFrame(spectral_entropy, columns=['Spectral_Entropy'])
+    return spectral_entropy_df
+
+
+
+
+
+"""
+# Fundamental Frequency (f0) - 검증 완료, 그러나 실시간 처리를 위한 최적화 필요
+def extract_f0(y, sr):
+    f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C7'))
+    pitch_f0 = np.nan_to_num(f0)
+    pitch_f0_df = pd.DataFrame(pitch_f0, columns=['F0'])
+    return pitch_f0_df
+"""
+
+
+"""
 # low level로 구현한 formant 추출 함수 - 검증 완료, 그러나 너무 느림 (Python 기반)
 # TODO : 속도 개선
 def extract_formants_for_frames(audio_file, frame_length=0.025, hop_length=0.01):
@@ -89,33 +119,6 @@ def extract_formants_for_frames(audio_file, frame_length=0.025, hop_length=0.01)
         formants_buffer.append(formants_to_use)
 
     return np.array(formants_buffer)
-
-
-# Spectral Flux - 검증 완료
-def extract_spectral_flux(y, sr):
-    S = np.abs(librosa.stft(y))  # STFT 계산
-    flux = np.sqrt(np.sum(np.diff(S, axis=1)**2, axis=0))  # 스펙트럼 간의 차이 계산
-    flux = np.append(flux, flux[-1])  # row 수 맞추기 위해 마지막 값 복제
-    flux_df = pd.DataFrame(flux, columns=['Spectral_Flux'])
-    return flux_df
-
-
-# Spectral Entropy - 검증 완료
-def extract_spectral_entropy(y, sr, n_fft=2048, hop_length=512):
-    S = np.abs(librosa.stft(y, n_fft=n_fft, hop_length=hop_length)) ** 2
-    ps = S / np.sum(S, axis=0)
-    spectral_entropy = -np.sum(ps * np.log(ps + 1e-10), axis=0)
-    spectral_entropy_df = pd.DataFrame(spectral_entropy, columns=['Spectral_Entropy'])
-    return spectral_entropy_df
-
-
-"""
-# Fundamental Frequency (f0) - 검증 완료, 그러나 실시간 처리를 위한 최적화 필요
-def extract_f0(y, sr):
-    f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C7'))
-    pitch_f0 = np.nan_to_num(f0)
-    pitch_f0_df = pd.DataFrame(pitch_f0, columns=['F0'])
-    return pitch_f0_df
 """
 
 
