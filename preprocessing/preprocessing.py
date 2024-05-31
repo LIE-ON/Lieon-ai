@@ -10,22 +10,76 @@ import features  # features.py 파일을 import
 import os
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
-# from torchesn.nn import ESN
-# from torchesn.utils import prepare_target
+
 
 class WAVDataset(Dataset):
     def __init__(self, wav_files):
+        """
+        초기화 메서드
+        :param wav_files: 처리할 WAV 파일의 경로 리스트
+        """
         self.wav_files = wav_files
 
     def __len__(self):
+        """
+        데이터셋의 길이 반환
+        :return: 데이터셋에 있는 WAV 파일의 수
+        """
         return len(self.wav_files)
 
     def __getitem__(self, idx):
+        """
+        인덱스에 해당하는 데이터 반환
+        :param idx: 인덱스
+        ====================================================
+        - Preprocessing (features.py 이용)
+        - 피처 병합 (merge_features 메서드 이용)
+        - 피처 데이터(X)와 라벨(y) 분리
+        ====================================================
+        :return: 피처 데이터(X)와 라벨(y)을 텐서 형태로 반환
+        """
         wav_path = self.wav_files[idx]
-        waveform, sample_rate = librosa.load(wav_path, sr=44100)
-        # TODO: preprocessing 과정 입력할 것
-        # TODO: 추출된 feature 병합한 dataframe을 concated_df로 선언 후, return
-        return torch.tensor(concated_df, dtype=torch.float32)
+        y, sr = librosa.load(wav_path, sr=44100)
+
+        # preprocessing 과정
+        mfcc = features.extract_mfcc(y, sr)
+        pitch = features.extract_pitch(y, sr)
+        f0_pyworld = features.extract_f0_pyworld(y, sr)
+        # formants = features.extract_formants_for_frames(audio_path)
+        spectral_flux = features.extract_spectral_flux(y, sr)
+        spectral_entropy = features.extract_spectral_entropy(y, sr)
+
+        # 추출된 feature 병합한 dataframe을 concated_df로 선언 후, return
+        # 피처 병합
+        features_dict = {
+            'mfcc': mfcc,
+            'pitch': pitch,
+            'f0_pyworld': f0_pyworld,
+            'spectral_flux': spectral_flux,
+            'spectral_entropy': spectral_entropy
+        }
+        concated_df = self.merge_features(features_dict)
+
+        # 라벨과 나머지 데이터 분리
+        X = concated_df.iloc[:, :-1].values  # 마지막 열을 제외한 나머지
+        y = concated_df.iloc[:, -1].values  # 마지막 열
+
+        # X와 y를 텐서로 변환
+        X = torch.tensor(X, dtype=torch.float32)
+        y = torch.tensor(y, dtype=torch.float32)
+
+        return X, y
+
+    def merge_features(self, features_dict):
+        # 피처들을 하나의 데이터프레임으로 병합
+        df_list = []
+        for key, df in features_dict.items():
+            # 각 DataFrame의 행 수를 통일
+            df_list.append(df)
+
+        # 열 방향으로 병합
+        concated_df = pd.concat(df_list, axis=1)
+        return concated_df
 
 
 def split_dataset(dataset, train_ratio=0.8):
@@ -36,48 +90,3 @@ def split_dataset(dataset, train_ratio=0.8):
 
 
 
-# WAV 파일이 있는 디렉토리
-wav_dir = 'dataset/train'
-wav_files = [os.path.join(wav_dir, file) for file in os.listdir(wav_dir) if file.endswith('.wav')]
-
-# 데이터셋 생성
-dataset = WAVDataset(wav_files)
-
-# 데이터셋을 트레인 셋과 테스트 셋으로 분할
-train_dataset, test_dataset = split_dataset(wav_dataset, train_ratio=0.8)
-
-# 데이터로더 생성
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
-test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4)
-
-
-
-"""
-여기서부터 모델 학습 및 예측 코드
-"""
-# ESN 모델 파라미터 정의
-input_size = train_dataset[0].shape[1] * train_dataset[0].shape[2]  # 피처 수
-hidden_size = 100  # 예시 은닉층 크기
-output_size = 1  # 예시 출력 크기
-washout = 0  # 예시 워시오트 기간
-
-# ESN 모델 생성
-model = ESN(input_size, hidden_size, output_size)
-
-# 학습을 위한 타겟 데이터 준비 (타겟 데이터가 있는 경우)
-# 여기서는 단순히 예시로 랜덤 타겟 데이터를 생성
-target_data = torch.randn(len(train_dataset), output_size)
-flat_target = prepare_target(target_data.unsqueeze(1), [len(train_dataset)], [washout])
-
-# 모델 학습
-for batch in train_dataloader:
-    batch = batch.view(batch.size(0), -1)  # 배치 차원 추가 및 reshape
-    output, _ = model(batch.unsqueeze(1), [washout], None, flat_target)
-    model.fit()
-
-# 예측
-for batch in test_dataloader:
-    batch = batch.view(batch.size(0), -1)
-    output, _ = model(batch.unsqueeze(1), [washout], None)
-    print(output)
-    break
