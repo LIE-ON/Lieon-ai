@@ -6,7 +6,7 @@ from parselmouth.praat import call
 from scipy.signal import find_peaks, lfilter, hamming
 from scipy.io import wavfile
 from scipy.fftpack import fft
-import features  # features.py 파일을 import
+import preprocessing.features  # features.py 파일을 import
 import os
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -81,6 +81,7 @@ class WAVDataset(Dataset):
         return concated_df
 
 
+# won't be used in this project
 def split_dataset(dataset, train_ratio=0.8):
     train_size = int(train_ratio * len(dataset))  # 트레인 셋 비율
     test_size = len(dataset) - train_size  # 나머지를 테스트 셋으로 사용
