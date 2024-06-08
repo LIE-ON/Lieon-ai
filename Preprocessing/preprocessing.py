@@ -6,7 +6,7 @@ from parselmouth.praat import call
 from scipy.signal import find_peaks, lfilter, hamming
 from scipy.io import wavfile
 from scipy.fftpack import fft
-import preprocessing.features  # features.py 파일을 import
+import Preprocessing.features as features  # features.py 파일을 import
 import os
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -41,7 +41,7 @@ class WAVDataset(Dataset):
         wav_path = self.wav_files[idx]
         y, sr = librosa.load(wav_path, sr=44100)
 
-        # preprocessing 과정
+        # Preprocessing 과정
         mfcc = features.extract_mfcc(y, sr)
         pitch = features.extract_pitch(y, sr)
         f0_pyworld = features.extract_f0_pyworld(y, sr)
@@ -79,14 +79,5 @@ class WAVDataset(Dataset):
         # 열 방향으로 병합
         concated_df = pd.concat(df_list, axis=1)
         return concated_df
-
-
-# won't be used in this project
-def split_dataset(dataset, train_ratio=0.8):
-    train_size = int(train_ratio * len(dataset))  # 트레인 셋 비율
-    test_size = len(dataset) - train_size  # 나머지를 테스트 셋으로 사용
-    train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
-    return train_dataset, test_dataset
-
 
 
