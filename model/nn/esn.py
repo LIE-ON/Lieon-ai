@@ -80,6 +80,7 @@ class ESN(nn.Module):
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.num_layers = num_layers
+        # nonlinearity: The activation function of the reservoir's neurons.
         if nonlinearity == 'tanh':
             mode = 'RES_TANH'
         elif nonlinearity == 'relu':
@@ -100,6 +101,7 @@ class ESN(nn.Module):
         self.lambda_reg = lambda_reg
         self.density = density
         self.w_io = w_io
+        # readout_training: Readout's traning algorithm ['gd'|'svd'|'cholesky'|'inv'].
         if readout_training in {'gd', 'svd', 'cholesky', 'inv'}:
             self.readout_training = readout_training
         else:
