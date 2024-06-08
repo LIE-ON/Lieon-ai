@@ -63,7 +63,12 @@ def extract_spectral_flux(y, sr):
 # Spectral Entropy - 검증 완료
 def extract_spectral_entropy(y, sr, n_fft=2048, hop_length=512):
     S = np.abs(librosa.stft(y, n_fft=n_fft, hop_length=hop_length)) ** 2
-    ps = S / np.sum(S, axis=0)
+    sum_S = np.sum(S, axis=0)
+    # Check for zeros in sum_S and set them to a small value to avoid division by zero
+    sum_S[sum_S == 0] = 1e-10  # or any small value to prevent division by zero
+
+    ps = S / sum_S
+    # ps = S / np.sum(S, axis=0)
     spectral_entropy = -np.sum(ps * np.log(ps + 1e-10), axis=0)
     spectral_entropy_df = pd.DataFrame(spectral_entropy, columns=['Spectral_Entropy'])
     return spectral_entropy_df
