@@ -11,14 +11,15 @@ import os
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 
-
 class WAVDataset(Dataset):
-    def __init__(self, wav_files):
+    def __init__(self, wav_files, max_length):
         """
         초기화 메서드
         :param wav_files: 처리할 WAV 파일의 경로 리스트
+        :param max_length: 각 샘플의 최대 길이
         """
         self.wav_files = wav_files
+        self.max_length = max_length
 
     def __len__(self):
         """
@@ -59,9 +60,12 @@ class WAVDataset(Dataset):
         }
         concated_df = self.merge_features(features_dict)
 
+        # 패딩 또는 자르기 적용
+        X = self.pad_or_truncate(concated_df.values)
+
         # 라벨과 나머지 데이터 분리
-        X = concated_df.iloc[:, :-1].values  # 마지막 열을 제외한 나머지
-        y = concated_df.iloc[:, -1].values  # 마지막 열
+        y = X[:, -1]  # 마지막 열이 라벨
+        X = X[:, :-1]  # 나머지가 피처 데이터
 
         # X와 y를 텐서로 변환
         X = torch.tensor(X, dtype=torch.float32)
@@ -80,4 +84,17 @@ class WAVDataset(Dataset):
         concated_df = pd.concat(df_list, axis=1)
         return concated_df
 
+    def pad_or_truncate(self, features):
+        length, feature_dim = features.shape
+        if length > self.max_length:
+            return features[:self.max_length]
+        elif length < self.max_length:
+            pad_width = self.max_length - length
+            padding = np.zeros((pad_width, feature_dim))
+            return np.vstack((features, padding))
+        return features
 
+def create_dataloader(wav_files, max_length, batch_size, shuffle=True):
+    dataset = WAVDataset(wav_files, max_length)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    return dataloader
