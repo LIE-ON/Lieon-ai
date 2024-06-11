@@ -13,7 +13,6 @@ from scipy.io import wavfile
 from scipy.fftpack import fft
 import os
 import pyworld as pw
-from concurrent.futures import ThreadPoolExecutor
 
 
 # MFCC - 검증 완료 (n_mfcc는 추출할 feature vector의 개수, 보통 12, 13, 20 등을 사용)
