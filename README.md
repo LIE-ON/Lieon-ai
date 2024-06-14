@@ -1,6 +1,7 @@
 # Lieon-ai
 Echo State Network(ESN) for Real-Time Lie Detection in Voice Domain
 <br><br>
+<img width="1070" alt="architecture" src="https://github.com/LIE-ON/Lieon-ai/assets/94499717/df8a1c03-f246-4754-be18-517897ecdb1e">
 
 ## Data
 <strong>1. Acquisition</strong>
