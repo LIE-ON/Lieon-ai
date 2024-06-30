@@ -7,7 +7,7 @@ import librosa
 import numpy as np
 import pandas as pd
 import parselmouth
-from parselmouth.praat import call
+# from parselmouth.praat import call
 from scipy.signal import find_peaks, lfilter, hamming
 from scipy.io import wavfile
 from scipy.fftpack import fft
