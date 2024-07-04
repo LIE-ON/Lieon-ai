@@ -12,7 +12,7 @@ def time_stretch(data, rate=1.0):
 
     :return: 시간 변형된 오디오 데이터.
     """
-    return librosa.effects.time_stretch(data, rate)
+    return librosa.effects.time_stretch(data, rate=rate)
 
 def pitch_shift(data, sr, n_steps):
     """
@@ -23,7 +23,7 @@ def pitch_shift(data, sr, n_steps):
     :param n_steps: 반음 단위의 피치 변화.
     :return: 피치 변형된 오디오 데이터.
     """
-    return librosa.effects.pitch_shift(data, sr, n_steps)
+    return librosa.effects.pitch_shift(data, sr=sr, n_steps=n_steps)
 
 def add_noise(data, noise_factor=0.005):
     """
@@ -36,7 +36,7 @@ def add_noise(data, noise_factor=0.005):
     augmented_data = data + noise_factor * noise
     return augmented_data
 
-def time_warp(data, sampling_rate, time_warping_factor=1.0):
+def time_warp(data, time_warping_factor=1.0):
     """
     오디오 파일의 특정 구간을 늘리거나 줄여서 다양한 발음 속도를 시뮬레이션합니다.
     volume_factor가 0.0보다 작으면 볼륨이 줄어들고, 1.0보다 크면 볼륨이 커집니다. 예를 들어, volume_factor=1.5는 볼륨을 50% 높입니다.
