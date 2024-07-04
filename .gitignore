@@ -3,3 +3,4 @@ dataset
 .DS_Store
 pyannote_token
 esn_model_test.pth
+*.pyc
