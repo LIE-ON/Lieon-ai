@@ -4,3 +4,5 @@ dataset
 pyannote_token
 esn_model_test.pth
 *.pyc
+*.pyc
+*.pyc
