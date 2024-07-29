@@ -12,6 +12,7 @@ def load_label(label_path):
 def multiply_sampling_rate(label, sampling_rate):
     """
     'Start', 'End' 컬럼의 값들에 sampling_rate를 인자로 받아 곱해주는 함수 정의, 소수점 첫째 자리는 반올림하여 정수로 넘기고, 나머지 소수는 모두 버림
+    Pyannote가 라벨링한 결과값의 시간과 librosa.load로 불러온 시간(time*sr)의 단위가 다르기 때문에, 이를 맞춰주기 위함
 
     :param label: 'Start', 'End' 컬럼을 갖는 DataFrame
     :param sampling_rate: 샘플링 레이트
@@ -39,22 +40,29 @@ def create_label_column(multiplied_df, y):
 
 
 # n_fft, hop_length를 제공받아 features.py의 함수들 처럼 데이터 길이를 축소하는 함수 정의
-def adjust_length(y, n_fft=2048, hop_length=512):
-    # 어떻게 줄이지
-    pass
+def reduce_time_domain(y, n_fft=2048, hop_length=512):
+    # 길이 계산
+    n_frames = 1 + (len(y) - n_fft) // hop_length
+
+    # 결과 저장용 배열
+    reduced_data = np.zeros(n_frames)
+
+    # 윈도우를 이동하며 샘플링
+    for i in range(n_frames):
+        start = i * hop_length
+        end = start + n_fft
+        window = y[start:end]
+        reduced_data[i] = np.mean(window)  # 또는 다른 특징 값 계산 가능
+
+    # 데이터프레임으로 변환
+    reduced_data_df = pd.DataFrame(reduced_data, columns=['Reduced_Value'])
+    return reduced_data_df
 
 
 def labeling(label_path, y, sr, n_fft=2048, hop_length=512):
-    # 라벨 데이터 로드
     label = load_label(label_path)
-
-    # 샘플링 레이트에 따라 'Start', 'End' 컬럼의 값들을 곱해줌
-    multiplied_label = multiply_sampling_rate(label, sr)
-
-    # 라벨링
-    labeled_y = create_label_column(multiplied_label, y)
-
-    # 데이터 길이 조정
-    # y_adjusted = adjust_length(labeled_y, n_fft, hop_length)
+    multiplied_label = multiply_sampling_rate(label, sr)  # 샘플링 레이트에 따라 'Start', 'End' 컬럼의 값들을 곱해줌 (단위 맞추기)
+    labeled_y = create_label_column(multiplied_label, y)  # 라벨링
+    y_adjusted = reduce_time_domain(labeled_y, n_fft, hop_length)  # 데이터 길이 조정
 
     return y_adjusted
