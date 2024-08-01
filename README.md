@@ -34,8 +34,13 @@ We conducted a data generation experiment using the two models below:</p>
 
 ## Model
 <p><strong>Classifier : Echo State Network</strong></p>
-<br>
+<img width="540" src="https://github.com/user-attachments/assets/106042b5-dc88-474a-8013-058f4a150e21">
+<ul>
+ <li>A specific kind of recurrent neural network (RNN) designed to efficiently handle sequential data based on Reservoir Computing.</li>
+</ul>
+<br><br>
 <p><strong>Explainer : SHAP(Shapley Additive exPlanations)</strong></p>
+<img width="540" src="https://github.com/user-attachments/assets/4866751c-bd75-41df-8f29-fff4af4e4a55">
 <br>
 
 ## Evaulation
