@@ -37,6 +37,10 @@ Echo State Network
 <br><br>
 
 ## Evaulation
+<ul>
+ <li>Accuracy</li>
+ <li>F1 Score</li>
+</ul>
 <br><br>
 
 ## Reference
