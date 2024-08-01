@@ -19,7 +19,7 @@ Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and
 We conducted a data generation experiment using the two models below:</p>
 <a href='https://github.com/LimDoHyeon/AAGAN'>AAGAN</a> : Audio-to-Audio Generative Adversarial Networks (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)
 
-<a href='https://github.com/LimDoHyeon/MVGAN'>MVGAN</a> : Audio-to-Audio GAN using Mel-spectrogram Generator and Vocoder (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)
+<a href='https://github.com/LimDoHyeon/MVGAN'>MVGAN</a> : Audio-to-Audio GAN using Mel-spectrogram Generator and HiFiGAN Vocoder (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)
 <br>
 <br>
 
