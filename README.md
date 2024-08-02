@@ -1,5 +1,5 @@
 # Lieon-ai
-Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks
+Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and SHAP
 <br><br>
 <img width="1070" alt="architecture" src="https://github.com/LIE-ON/Lieon-ai/assets/94499717/df8a1c03-f246-4754-be18-517897ecdb1e">
 
@@ -19,7 +19,7 @@ Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks
 We conducted a data generation experiment using the two models below:</p>
 <a href='https://github.com/LimDoHyeon/AAGAN'>AAGAN</a> : Audio-to-Audio Generative Adversarial Networks (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)
 
-<a href='https://github.com/LimDoHyeon/MVGAN'>MVGAN</a> : Audio-to-Audio GAN using Mel-spectrogram Generator and Vocoder (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)
+<a href='https://github.com/LimDoHyeon/MVGAN'>MVGAN</a> : Audio-to-Audio GAN using Mel-spectrogram Generator and HiFiGAN Vocoder (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)
 <br>
 <br>
 
@@ -33,10 +33,21 @@ We conducted a data generation experiment using the two models below:</p>
 </ul>
 
 ## Model
-Echo State Network
+<p><strong>Classifier : Echo State Network</strong></p>
+<img width="540" src="https://github.com/user-attachments/assets/106042b5-dc88-474a-8013-058f4a150e21">
+<ul>
+ <li>A specific kind of recurrent neural network (RNN) designed to efficiently handle sequential data based on Reservoir Computing.</li>
+</ul>
 <br><br>
+<p><strong>Explainer : SHAP(Shapley Additive exPlanations)</strong></p>
+<img width="540" src="https://github.com/user-attachments/assets/4866751c-bd75-41df-8f29-fff4af4e4a55">
+<br>
 
 ## Evaulation
+<ul>
+ <li>Accuracy</li>
+ <li>F1 Score</li>
+</ul>
 <br><br>
 
 ## Reference
