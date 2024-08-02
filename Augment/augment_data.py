@@ -56,28 +56,28 @@ def add_noise(data, noise_factor=0.005):
 
 
 def augment_and_save(data, sr, base_filename, output_dir):
-    # augment data 1
+    # Augment data 1
     tsf_and_addnoise = time_stretch(data, rate=1.3)
     tsf_and_addnoise = add_noise(tsf_and_addnoise, noise_factor=0.025)
     sf.write(os.path.join(output_dir, f'{base_filename}_augment_1.wav'), tsf_and_addnoise, sr)
 
-    # augment data 2
+    # Augment data 2
     tss_and_addnoise = time_stretch(data, rate=0.7)
     tss_and_addnoise = add_noise(tss_and_addnoise, noise_factor=0.05)
     sf.write(os.path.join(output_dir, f'{base_filename}_augment_2.wav'), tss_and_addnoise, sr)
 
-    # augment data 3
+    # Augment data 3
     psh = pitch_shift(data, sr, n_steps=2)
     sf.write(os.path.join(output_dir, f'{base_filename}_augment_3.wav'), psh, sr)
 
-    # augment data 4
+    # Augment data 4
     psl = pitch_shift(data, sr, n_steps=-2)
     sf.write(os.path.join(output_dir, f'{base_filename}_augment_4.wav'), psl, sr)
 
 
 def main():
     input_dir = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/train'
-    output_dir = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/augment'
+    output_dir = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/Augment'
     os.makedirs(output_dir, exist_ok=True)
 
     file_paths = [os.path.join(root, file)
