@@ -3,19 +3,19 @@ import torch
 import os
 import Preprocessing.preprocessing as preprocessing
 from Preprocessing.preprocessing import create_dataloader
-from model.utils.utils import prepare_target
+from Model.utils.utils import prepare_target
 from torch.utils.data import DataLoader
-from model.nn import ESN
-import model.nn.esn as esn
+from Model.nn import ESN
+import Model.nn.esn as esn
 
 
 # WAV 파일이 있는 디렉토리
 # Parameters
 wav_dir_train = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/train'
-wav_files_train = [os.path.join(wav_dir_train, file) for file in os.listdir(wav_dir_train) if file.endswith('.wav')]
+wav_path_train = [os.path.join(wav_dir_train, file) for file in os.listdir(wav_dir_train) if file.endswith('.wav')]
 
 wav_dir_test = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/test'
-wav_files_test = [os.path.join(wav_dir_test, file) for file in os.listdir(wav_dir_test) if file.endswith('.wav')]
+wav_path_test = [os.path.join(wav_dir_test, file) for file in os.listdir(wav_dir_test) if file.endswith('.wav')]
 
 """
 데이터 로드 및 전처리, 데이터로더 생성
@@ -36,7 +36,7 @@ readout_training = 'svd'  # Readout 학습 알고리즘 지정 (svd, cholesky, i
 output_steps = 'all'  # ridge regression 방법에서 reservoir 출력을 사용하는 방법 (last, all, mean)
 
 # Create DataLoader
-dataloader = create_dataloader(wav_files_train, max_length, batch_size, shuffle=True)
+dataloader = create_dataloader(wav_path_train, max_length, batch_size, shuffle=True)
 
 
 """
@@ -84,5 +84,5 @@ for epoch in range(num_epochs):
     print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}')
 
 
-# Save the trained model
+# Save the trained Model
 # torch.save(esn.state_dict(), 'esn_model_test.pth')
