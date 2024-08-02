@@ -7,18 +7,20 @@ from scipy.signal import find_peaks, lfilter, hamming
 from scipy.io import wavfile
 from scipy.fftpack import fft
 import Preprocessing.features as features  # features.py 파일을 import
+from Preprocessing.label import labeling
 import os
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 
 class WAVDataset(Dataset):
-    def __init__(self, wav_files, max_length):
+    def __init__(self, wav_path, label_path, max_length):
         """
         초기화 메서드
-        :param wav_files: 처리할 WAV 파일의 경로 리스트
+        :param wav_path: 처리할 WAV 파일의 경로 리스트
         :param max_length: 각 샘플의 최대 길이
         """
-        self.wav_files = wav_files
+        self.wav_path = wav_path
+        self.label_path = label_path
         self.max_length = max_length
 
     def __len__(self):
@@ -26,7 +28,7 @@ class WAVDataset(Dataset):
         데이터셋의 길이 반환
         :return: 데이터셋에 있는 WAV 파일의 수
         """
-        return len(self.wav_files)
+        return len(self.wav_path)
 
     def __getitem__(self, idx):
         """
@@ -39,8 +41,9 @@ class WAVDataset(Dataset):
         ====================================================
         :return: 피처 데이터(X)와 라벨(y)을 텐서 형태로 반환
         """
-        wav_path = self.wav_files[idx]
+        wav_path = self.wav_path[idx]
         y, sr = librosa.load(wav_path, sr=44100)
+        label_path = self.label_path[idx]
 
         # Preprocessing 과정
         mfcc = features.extract_mfcc(y, sr)
@@ -48,6 +51,7 @@ class WAVDataset(Dataset):
         f0_pyworld = features.extract_f0_pyworld(y, sr)
         spectral_flux = features.extract_spectral_flux(y, sr)
         spectral_entropy = features.extract_spectral_entropy(y, sr)
+        labeled = labeling(label_path, y, sr)
 
         # 추출된 feature 병합한 dataframe을 concated_df로 선언 후, return
         # 피처 병합
@@ -56,16 +60,17 @@ class WAVDataset(Dataset):
             'pitch': pitch,
             'f0_pyworld': f0_pyworld,
             'spectral_flux': spectral_flux,
-            'spectral_entropy': spectral_entropy
+            'spectral_entropy': spectral_entropy,
+            'label': labeled
         }
-        concated_df = self.merge_features(features_dict)
+        concatenated_df = self.merge_features(features_dict)
 
         # 패딩 또는 자르기 적용
-        X = self.pad_or_truncate(concated_df.values)
+        X = self.pad_or_truncate(concatenated_df.values)
 
         # 라벨과 나머지 데이터 분리
-        y = X[:, -1]  # 마지막 열이 라벨
-        X = X[:, :-1]  # 나머지가 피처 데이터
+        y = X[:, -1]  # 마지막 열이 라벨 (수정금지)
+        X = X[:, :-1]  # 마지막 열을 제외한 나머지가 피처 데이터
 
         # X와 y를 텐서로 변환
         X = torch.tensor(X, dtype=torch.float32)
@@ -81,8 +86,8 @@ class WAVDataset(Dataset):
             df_list.append(df)
 
         # 열 방향으로 병합
-        concated_df = pd.concat(df_list, axis=1)
-        return concated_df
+        concatenated_df = pd.concat(df_list, axis=1)
+        return concatenated_df
 
     def pad_or_truncate(self, features):
         length, feature_dim = features.shape
@@ -94,7 +99,8 @@ class WAVDataset(Dataset):
             return np.vstack((features, padding))
         return features
 
-def create_dataloader(wav_files, max_length, batch_size, shuffle=True):
-    dataset = WAVDataset(wav_files, max_length)
+
+def create_dataloader(wav_path, label_path, max_length, batch_size, shuffle=True):
+    dataset = WAVDataset(wav_path, label_path, max_length)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     return dataloader
