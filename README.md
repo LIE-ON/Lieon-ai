@@ -5,9 +5,8 @@ Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and
 
 ## Requirements
 <p>All code was written in <strong>Python>=3.7.</strong></p>
-To download the libraries used in this project, enter the following command:
+<p>To download the libraries used in this project, enter the following command:</p>
 <blockquote>!pip install -r requirement.txt</blockquote>
-<br>
 <br>
 
 ## Data
@@ -19,12 +18,10 @@ To download the libraries used in this project, enter the following command:
  <li>And the voices of the recipients were labeled as 0.</li>
 </ul>
 <br>
-<br>
 
 <strong>2. Augmentation</strong>
 <br>
 <p>We tried augmentation method to expand the amount of data.<br><strong>Time strech</strong>, <strong>pitch shift</strong> and <strong>adding noise</strong> were used to augmetation.</p>
-<br>
 <br>
 
 <strong>3. Generation</strong>
@@ -44,7 +41,6 @@ We conducted a data generation experiment using the two models below:</p>
  <li>Spectral Flux</li>
  <li>Spectral Frequency</li>
 </ul>
-<br>
 <br>
 
 ## Model (ongoing)
