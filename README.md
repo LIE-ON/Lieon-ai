@@ -3,6 +3,13 @@ Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and
 <br><br>
 <img width="1070" alt="architecture" src="https://github.com/LIE-ON/Lieon-ai/assets/94499717/df8a1c03-f246-4754-be18-517897ecdb1e">
 
+## Requirements
+<p>All code was written in <strong>Python>=3.7.</strong></p>
+To download the libraries used in this project, enter the following command:
+<blockquote>!pip install -r requirement.txt</blockquote>
+<br>
+<br>
+
 ## Data
 <strong>1. Labeling</strong>
 <br>
@@ -37,6 +44,8 @@ We conducted a data generation experiment using the two models below:</p>
  <li>Spectral Flux</li>
  <li>Spectral Frequency</li>
 </ul>
+<br>
+<br>
 
 ## Model (ongoing)
 <p><strong>Classifier : Echo State Network</strong></p>
