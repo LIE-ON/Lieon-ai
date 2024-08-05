@@ -6,6 +6,12 @@ Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and
 ## Data
 <strong>1. Labeling</strong>
 <br>
+<p>For Speaker Diarization, we utilized a pretrained model provided by the <a href="https://github.com/pyannote/pyannote-audio">Pyannote</a> library.</p>
+<ul>
+ <li>The voices of the scam callers(voice phishing scammers) were labeled as 1, </li>
+ <li>And the voices of the recipients were labeled as 0.</li>
+</ul>
+<br>
 <br>
 
 <strong>2. Augmentation</strong>
@@ -32,7 +38,7 @@ We conducted a data generation experiment using the two models below:</p>
  <li>Spectral Frequency</li>
 </ul>
 
-## Model
+## Model (ongoing)
 <p><strong>Classifier : Echo State Network</strong></p>
 <img width="540" src="https://github.com/user-attachments/assets/106042b5-dc88-474a-8013-058f4a150e21">
 <ul>
@@ -43,7 +49,7 @@ We conducted a data generation experiment using the two models below:</p>
 <img width="540" src="https://github.com/user-attachments/assets/4866751c-bd75-41df-8f29-fff4af4e4a55">
 <br>
 
-## Evaulation
+## Evaulation (ongoing)
 <ul>
  <li>Accuracy</li>
  <li>F1 Score</li>
