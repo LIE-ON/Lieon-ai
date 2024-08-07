@@ -3,15 +3,25 @@ Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and
 <br><br>
 <img width="1070" alt="architecture" src="https://github.com/LIE-ON/Lieon-ai/assets/94499717/df8a1c03-f246-4754-be18-517897ecdb1e">
 
+## Requirements
+<p>All code was written in <strong>Python>=3.7.</strong></p>
+<p>To download the libraries used in this project, enter the following command:</p>
+<blockquote>!pip install -r requirement.txt</blockquote>
+<br>
+
 ## Data
 <strong>1. Labeling</strong>
 <br>
+<p>For Speaker Diarization, we utilized a pretrained model provided by the <a href="https://github.com/pyannote/pyannote-audio">Pyannote</a> library.</p>
+<ul>
+ <li>The voices of the scam callers(voice phishing scammers) were labeled as 1, </li>
+ <li>And the voices of the recipients were labeled as 0.</li>
+</ul>
 <br>
 
 <strong>2. Augmentation</strong>
 <br>
 <p>We tried augmentation method to expand the amount of data.<br><strong>Time strech</strong>, <strong>pitch shift</strong> and <strong>adding noise</strong> were used to augmetation.</p>
-<br>
 <br>
 
 <strong>3. Generation</strong>
@@ -31,8 +41,9 @@ We conducted a data generation experiment using the two models below:</p>
  <li>Spectral Flux</li>
  <li>Spectral Frequency</li>
 </ul>
+<br>
 
-## Model
+## Model (ongoing)
 <p><strong>Classifier : Echo State Network</strong></p>
 <img width="540" src="https://github.com/user-attachments/assets/106042b5-dc88-474a-8013-058f4a150e21">
 <ul>
@@ -43,7 +54,7 @@ We conducted a data generation experiment using the two models below:</p>
 <img width="540" src="https://github.com/user-attachments/assets/4866751c-bd75-41df-8f29-fff4af4e4a55">
 <br>
 
-## Evaulation
+## Evaulation (ongoing)
 <ul>
  <li>Accuracy</li>
  <li>F1 Score</li>
