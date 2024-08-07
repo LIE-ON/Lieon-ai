@@ -2,10 +2,10 @@ import torch
 import os
 from sklearn.metrics import f1_score, accuracy_score
 from Preprocessing.preprocessing import create_dataloader
-from Model.utils.utils import prepare_target
+from Classifier.utils.utils import prepare_target
 from torch.utils.data import DataLoader
-from Model.nn import ESN
-import Model.nn.esn as esn
+from Classifier.nn import ESN
+import Classifier.nn.esn as esn
 
 
 def load_data_labels_path(wav_dir, label_dir):
