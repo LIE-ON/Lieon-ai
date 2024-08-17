@@ -108,12 +108,12 @@ def test(esn, test_loader, washout, criterion, device):
 
 
 def main():
-    wav_dir_train = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/train/wav'
-    wav_dir_val = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/val/wav'
-    wav_dir_test = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/test/wav'
-    label_dir_train = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/train/label'
-    label_dir_val = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/val/label'
-    label_dir_test = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/test/label'
+    wav_dir_train = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/Train/Audio'
+    wav_dir_val = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/Val/Audio'
+    wav_dir_test = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/Test/Audio'
+    label_dir_train = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/Train/Label'
+    label_dir_val = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/Val/Label'
+    label_dir_test = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/Test/Label'
 
     max_length = 200  # Set maximum length for padding/truncating
     batch_size = 16
