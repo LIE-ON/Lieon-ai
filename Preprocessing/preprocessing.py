@@ -1,8 +1,6 @@
 import librosa
 import numpy as np
 import pandas as pd
-import parselmouth
-from parselmouth.praat import call
 from scipy.signal import find_peaks, lfilter, hamming
 from scipy.io import wavfile
 from scipy.fftpack import fft
@@ -10,7 +8,8 @@ import Preprocessing.features as features  # features.py 파일을 import
 from Preprocessing.label import labeling
 import os
 import torch
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader
+
 
 class WAVDataset(Dataset):
     def __init__(self, wav_path, label_path, max_length):
@@ -65,7 +64,7 @@ class WAVDataset(Dataset):
         }
         concatenated_df = self.merge_features(features_dict)
 
-        # 패딩 또는 자르기 적용
+        # pad_or_truncate 적용
         X = self.pad_or_truncate(concatenated_df.values)
 
         # 라벨과 나머지 데이터 분리
@@ -74,7 +73,7 @@ class WAVDataset(Dataset):
 
         # X와 y를 텐서로 변환
         X = torch.tensor(X, dtype=torch.float32)
-        y = torch.tensor(y, dtype=torch.float32)
+        y = torch.tensor(y, dtype=torch.long)
 
         return X, y
 
