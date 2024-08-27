@@ -6,7 +6,7 @@
 import librosa
 import numpy as np
 import pandas as pd
-import parselmouth
+# import parselmouth
 from scipy.signal import find_peaks, lfilter, hamming
 from scipy.io import wavfile
 from scipy.fftpack import fft
