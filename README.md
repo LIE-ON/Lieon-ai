@@ -1,5 +1,5 @@
 # Lieon-ai
-Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and SHAP
+Explainable Real-time Voice Phishing(Lie) Classifier using Echo State Networks and SHAP
 <br><br>
 <img width="1070" alt="architecture" src="https://github.com/LIE-ON/Lieon-ai/assets/94499717/df8a1c03-f246-4754-be18-517897ecdb1e">
 
