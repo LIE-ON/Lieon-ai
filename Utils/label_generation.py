@@ -91,35 +91,28 @@ def process_single_file(args):
 def main():
     setup_logging()
 
-    base_dir = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/[Temp]total_data'
+    base_dir = "H:/.shortcut-targets-by-id/1GKf6cKNuFHdu7j8BO1RrBifSerASlNG8/LIEON_DATA/source_data/"
     audio_dir = os.path.join(base_dir, "Audio")
     output_csv_dir = os.path.join(base_dir, "Label")
 
-    use_auth_token = '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'
+    use_auth_token = os.environ["HUGGINGFACEHUB_API_TOKEN"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.info(f"Using device: {device}")
 
     pipeline = load_pipeline(use_auth_token, device)
 
-    audio_files = [
-        os.path.join(audio_dir, f)
-        for f in os.listdir(audio_dir)
-        if f.endswith('.wav')
-    ]
+    audio_files = [os.path.join(audio_dir, f) for f in os.listdir(audio_dir) if f.endswith('.wav')]
 
     args_list = [(audio_file, output_csv_dir, pipeline) for audio_file in audio_files]
 
     # 병렬 처리 수행 (프로세스 기반)
-    with ProcessPoolExecutor(max_workers=2) as executor:
+    with ProcessPoolExecutor(max_workers=8) as executor:
         futures = [executor.submit(process_single_file, args) for args in args_list]
         for future in as_completed(futures):
             pass  # 개별 작업 완료 시 추가 처리가 필요하면 여기에 작성
 
     logging.info("All files have been processed.")
-
-
-    # Not completed yet
 
 if __name__ == "__main__":
     main()
