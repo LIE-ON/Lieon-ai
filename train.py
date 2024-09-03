@@ -144,14 +144,14 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # Load data path and labels path
-    wav_path_train = load_data_labels_path(wav_dir_train, label_dir_train)
-    wav_path_val = load_data_labels_path(wav_dir_val, label_dir_val)
-    wav_path_test = load_data_labels_path(wav_dir_test, label_dir_test)
+    wav_path_train, label_path_train = load_data_labels_path(wav_dir_train, label_dir_train)
+    wav_path_val, label_path_val = load_data_labels_path(wav_dir_val, label_dir_val)
+    wav_path_test, label_path_test = load_data_labels_path(wav_dir_test, label_dir_test)
 
     # Create DataLoader
-    train_dataloader = create_dataloader(wav_path_train, max_length, batch_size, shuffle=True)
-    val_dataloader = create_dataloader(wav_path_val, max_length, batch_size, shuffle=False)
-    test_dataloader = create_dataloader(wav_path_test, max_length, batch_size, shuffle=False)
+    train_dataloader = create_dataloader(wav_path_train, label_path_train, max_length, batch_size, shuffle=True)
+    val_dataloader = create_dataloader(wav_path_val, label_path_val, max_length, batch_size, shuffle=False)
+    test_dataloader = create_dataloader(wav_path_test, label_path_test, max_length, batch_size, shuffle=False)
 
     train(esn, train_dataloader, val_dataloader, num_epochs, washout, criterion, optimizer, device)
 

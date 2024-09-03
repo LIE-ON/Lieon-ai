@@ -1,5 +1,5 @@
 # Lieon-ai
-Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and SHAP
+Explainable Real-time Voice Phishing(Lie) Classifier using Echo State Networks and LIME
 <br><br>
 <img width="1070" alt="architecture" src="https://github.com/LIE-ON/Lieon-ai/assets/94499717/df8a1c03-f246-4754-be18-517897ecdb1e">
 
@@ -24,12 +24,12 @@ Explainable Real-time Voice Phishing(Lie) Detector using Echo State Networks and
 <p>We tried augmentation method to expand the amount of data.<br><strong>Time strech</strong>, <strong>pitch shift</strong> and <strong>adding noise</strong> were used to augmetation.</p>
 <br>
 
-<strong>3. Generation</strong>
-<p>To deal with the lack of data despite augmentation, we used generative AI for producing audio data which have biological features similar to the original data.
-We conducted a data generation experiment using the two models below:</p>
-<a href='https://github.com/LimDoHyeon/AAGAN'>AAGAN</a> : Audio-to-Audio Generative Adversarial Networks (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)
+<del><strong>3. Generation</strong></del>
+<p><del>To deal with the lack of data despite augmentation, we used generative AI for producing audio data which have biological features similar to the original data.
+We conducted a data generation experiment using the two models below:</del></p>
+<del><a href='https://github.com/LimDoHyeon/AAGAN'>AAGAN</a> : Audio-to-Audio Generative Adversarial Networks (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)</del>
 
-<a href='https://github.com/LimDoHyeon/MVGAN'>MVGAN</a> : Audio-to-Audio GAN using Mel-spectrogram Generator and HiFiGAN Vocoder (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)
+<del><a href='https://github.com/LimDoHyeon/MVGAN'>MVGAN</a> : Audio-to-Audio GAN using Mel-spectrogram Generator and HiFiGAN Vocoder (made by <a href='https://github.com/LimDoHyeon'>Do-Hyeon Lim</a>)</del>
 <br>
 <br>
 
@@ -50,8 +50,7 @@ We conducted a data generation experiment using the two models below:</p>
  <li>A specific kind of recurrent neural network (RNN) designed to efficiently handle sequential data based on Reservoir Computing.</li>
 </ul>
 <br><br>
-<p><strong>Explainer : SHAP(Shapley Additive exPlanations)</strong></p>
-<img width="540" src="https://github.com/user-attachments/assets/4866751c-bd75-41df-8f29-fff4af4e4a55">
+<p><strong>Explainer : LIME(Local Interpretable Model-agnostic Explanation)</strong></p>
 <br>
 
 ## Evaulation (ongoing)
