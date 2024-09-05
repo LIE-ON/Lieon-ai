@@ -1,118 +1,87 @@
 import os
-import logging
-import pandas as pd
 import torch
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import csv
 from pyannote.audio import Pipeline
+from pyannote.core import Annotation, Segment
+import concurrent.futures
+import re
 
 
-def setup_logging():
-    """
-    로깅 설정을 수행하는 함수
-    """
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.StreamHandler()
-        ]
-    )
-
-
-def load_pipeline(use_auth_token, device):
+def load_pipeline(use_auth_token):
     """
     PyAnnote 파이프라인을 로드하는 함수
     """
-    logging.info("Loading PyAnnote pipeline...")
     pipeline = Pipeline.from_pretrained(
         "pyannote/speaker-diarization-3.1",
         use_auth_token=use_auth_token
     )
-    pipeline.to(device)
-    logging.info("Pipeline loaded successfully.")
     return pipeline
 
 
 def speaker_diarization(audio_path, output_csv_path, pipeline):
     """
-    오디오 파일에 대한 speaker diarization 수행
+    주어진 오디오 파일에 대해 speaker diarization 수행 및 CSV로 저장
     """
-    logging.info(f"Processing file: {audio_path}")
-
     # Diarization 수행
     diarization = pipeline(audio_path, num_speakers=2)
 
-    # 결과를 데이터프레임으로 변환
-    records = []
+    # 라벨링 결과 출력 및 CSV 파일 저장
     label_mapping = {}
-    label_counter = 1
+    label_counter = 0  # 라벨 카운터를 1로 시작하여 묵음 라벨과 겹치지 않도록 함
 
-    for segment, _, speaker in diarization.itertracks(yield_label=True):
-        if speaker not in label_mapping:
-            label_mapping[speaker] = label_counter
-            label_counter += 1
-        label = label_mapping[speaker]
-        records.append({
-            'Start': segment.start,
-            'End': segment.end,
-            'Speaker': speaker,
-            'Label': label
-        })
+    # CSV 파일 열기 및 헤더 작성
+    with open(output_csv_path, 'w', newline='') as csvfile:
+        fieldnames = ['Start', 'End', 'Speaker', 'Label']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-    df = pd.DataFrame(records)
+        writer.writeheader()
 
-    # 출력 디렉토리 생성
-    os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
-
-    # 결과를 CSV로 저장
-    df.to_csv(output_csv_path, index=False)
-    logging.info(f"Finished processing {audio_path}. Output saved to {output_csv_path}.")
+        # 화자 구간 라벨링
+        annotation = Annotation()
+        for turn, _, speaker in diarization.itertracks(yield_label=True):
+            if speaker not in label_mapping:
+                label_mapping[speaker] = label_counter
+                label_counter += 1
+            label = label_mapping[speaker]
+            writer.writerow({'Start': turn.start, 'End': turn.end, 'Speaker': speaker, 'Label': label})
+            annotation[Segment(start=turn.start, end=turn.end)] = speaker
 
 
-def process_single_file(args):
+def process_file(audio_file, output_csv_dir, pipeline):
     """
-    개별 파일을 처리하는 함수
+    각 파일에 대한 diarization 수행 및 결과 저장
     """
-    audio_path, output_csv_dir, pipeline = args
-    try:
-        if not os.path.exists(audio_path):
-            logging.warning(f"File {audio_path} does not exist. Skipping...")
-            return
-
-        base_name = os.path.splitext(os.path.basename(audio_path))[0]
-        label_number = ''.join(filter(str.isdigit, base_name))
-        output_csv_path = os.path.join(output_csv_dir, f'label{label_number}.csv')
-
-        speaker_diarization(audio_path, output_csv_path, pipeline)
-    except Exception as e:
-        logging.error(f"Error processing file {audio_path}: {e}")
+    # 파일 이름에서 숫자 추출 (예: data1.wav -> 1)
+    match = re.search(r'\d+', os.path.basename(audio_file))
+    if match:
+        file_number = match.group(0)
+        # 대응되는 label 파일 이름 설정 (label1.csv, label2.csv, ...)
+        output_csv_path = os.path.join(output_csv_dir, f"label{file_number}.csv")
+        speaker_diarization(audio_file, output_csv_path, pipeline)
 
 
 def main():
-    setup_logging()
+    base_dir = "C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/[Temp]total_data/"
+    audio_dir = os.path.join(base_dir, "Audio/")
+    output_csv_dir = os.path.join(base_dir, "Label/")
 
-    base_dir = "H:/.shortcut-targets-by-id/1GKf6cKNuFHdu7j8BO1RrBifSerASlNG8/LIEON_DATA/source_data/"
-    audio_dir = os.path.join(base_dir, "Audio")
-    output_csv_dir = os.path.join(base_dir, "Label")
+    # 오디오 파일 목록 가져오기
+    audio_files = [os.path.join(audio_dir, file) for file in os.listdir(audio_dir) if file.endswith('.wav')]
 
     use_auth_token = os.environ["HUGGINGFACEHUB_API_TOKEN"]
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
 
-    pipeline = load_pipeline(use_auth_token, device)
+    # 순차적으로 파일 처리
+    for audio_file in audio_files:
+        print('Processing: ', audio_file, '(total', len(audio_files), ')')
+        # PyAnnote pipeline 로드
+        pipeline = load_pipeline(use_auth_token)
 
-    audio_files = [os.path.join(audio_dir, f) for f in os.listdir(audio_dir) if f.endswith('.wav')]
+        try:
+            process_file(audio_file, output_csv_dir, pipeline)
+        except Exception as e:
+            print(f"Error processing file {audio_file}: {e}")
 
-    args_list = [(audio_file, output_csv_dir, pipeline) for audio_file in audio_files]
-
-    # 병렬 처리 수행 (프로세스 기반)
-    with ProcessPoolExecutor(max_workers=8) as executor:
-        futures = [executor.submit(process_single_file, args) for args in args_list]
-        for future in as_completed(futures):
-            pass  # 개별 작업 완료 시 추가 처리가 필요하면 여기에 작성
-
-    logging.info("All files have been processed.")
 
 if __name__ == "__main__":
     main()
