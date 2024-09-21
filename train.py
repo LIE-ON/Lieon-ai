@@ -24,6 +24,8 @@ def get_file_paths(wav_dir, label_dir):
 
 def train(model, train_loader, criterion, optimizer, device):
     model.train()
+    all_preds = []
+    all_labels = []
     total_loss = 0
     for X, y in train_loader:
         X = X.to(device)
@@ -45,7 +47,9 @@ def train(model, train_loader, criterion, optimizer, device):
 
         total_loss += loss.item()
     avg_loss = total_loss / len(train_loader)
-    return avg_loss
+    accuracy = accuracy_score(all_labels, all_preds)
+    f1 = f1_score(all_labels, all_preds, average='weighted')
+    return avg_loss, accuracy, f1
 
 
 def evaluate(model, data_loader, device):
@@ -158,12 +162,11 @@ def main():
     # 학습 및 검증
     for epoch in range(num_epochs):
         print(f'Epoch [{epoch + 1}/{num_epochs}], ')
-        train_loss = train(model, train_loader, criterion, optimizer, device)
+        train_loss, train_accuracy, train_f1 = train(model, train_loader, criterion, optimizer, device)
         val_accuracy, val_f1 = evaluate(model, val_loader, device)
 
-        print(f'Training Loss: {train_loss:.4f}, '
-              f'Validation Accuracy: {val_accuracy:.4f}, '
-              f'Validation F1 Score: {val_f1:.4f}')
+        print(f'Training Loss: {train_loss:.4f}, Training Accuracy: {train_accuracy:.4f}, Training F1 Score: {train_f1:.4f},'
+              f'Validation Accuracy: {val_accuracy:.4f}, Validation F1 Score: {val_f1:.4f}')
 
     # 테스트
     test_accuracy, test_f1 = evaluate(model, test_loader, device)
@@ -172,7 +175,7 @@ def main():
     # 모델 저장
     model_path = 'esn_model_train3.pth'
     torch.save(model.state_dict(), model_path)
-    print(f'학습된 모델을 {model_path} 파일로 저장했습니다.')
+    print(f'The model saved as {model_path}.')
 
 if __name__ == '__main__':
     main()
