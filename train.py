@@ -39,6 +39,10 @@ def train(model, train_loader, criterion, optimizer, device):
         outputs = outputs.reshape(-1, model.output_size)
         y = y.reshape(-1)
 
+        _, predicted = torch.max(outputs, 1)
+        all_preds.extend(predicted.cpu().numpy())
+        all_labels.extend(y.cpu().numpy())
+
         loss = criterion(outputs, y)
 
         optimizer.zero_grad()
