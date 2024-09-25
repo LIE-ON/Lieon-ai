@@ -60,8 +60,22 @@ def process_file(audio_file, output_csv_dir, pipeline):
         speaker_diarization(audio_file, output_csv_path, pipeline)
 
 
+def process_file_for_augment(audio_file, output_csv_dir, pipeline):
+    """
+    각 파일에 대한 diarization 수행 및 결과 저장
+    """
+    # 파일 이름에서 필요한 부분 추출 (예: data1.wav_augment1.wav -> label1.wav_augment1.csv)
+    base_name = os.path.basename(audio_file)
+    base_name_without_ext = os.path.splitext(base_name)[0]  # 확장자를 제거한 파일명
+
+    # 대응되는 label 파일 이름 설정
+    output_csv_path = os.path.join(output_csv_dir, f"label{base_name_without_ext}.csv")
+
+    speaker_diarization(audio_file, output_csv_path, pipeline)
+
+
 def main():
-    base_dir = "C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/[Temp]total_data/"
+    base_dir = "C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/[Temp]total_data/Augmented/"
     audio_dir = os.path.join(base_dir, "Audio/")
     output_csv_dir = os.path.join(base_dir, "Label/")
 
@@ -70,15 +84,15 @@ def main():
 
     use_auth_token = os.environ["HUGGINGFACEHUB_API_TOKEN"]
 
-
     # 순차적으로 파일 처리
-    for audio_file in audio_files:
-        print('Processing: ', audio_file, '(total', len(audio_files), ')')
+    for idx, audio_file in enumerate(audio_files, start=1):
+        print(f'Processing: {audio_file} ({idx}/{len(audio_files)})')  # 진행 상태 표시
         # PyAnnote pipeline 로드
         pipeline = load_pipeline(use_auth_token)
 
         try:
-            process_file(audio_file, output_csv_dir, pipeline)
+            # process_file(audio_file, output_csv_dir, pipeline)
+            process_file_for_augment(audio_file, output_csv_dir, pipeline)
         except Exception as e:
             print(f"Error processing file {audio_file}: {e}")
 
