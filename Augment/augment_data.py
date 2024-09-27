@@ -68,7 +68,8 @@ def augment_and_save(data, sr, base_filename, output_dir):
 
     # Augment data 3
     psh = pitch_shift(data, sr, n_steps=2)
-    sf.write(os.path.join(output_dir, f'{base_filename}_augment_3.wav'), psh, sr)
+    psh_and_addnoise = add_noise(psh, noise_factor=0.01)
+    sf.write(os.path.join(output_dir, f'{base_filename}_augment_3.wav'), psh_and_addnoise, sr)
 
     # Augment data 4
     psl = pitch_shift(data, sr, n_steps=-2)
@@ -76,8 +77,8 @@ def augment_and_save(data, sr, base_filename, output_dir):
 
 
 def main():
-    input_dir = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/train'
-    output_dir = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/dataset/Augment'
+    input_dir = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/[Temp]total_data/Source/Audio'
+    output_dir = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/[Temp]total_data/Augmented/Audio'
     os.makedirs(output_dir, exist_ok=True)
 
     file_paths = [os.path.join(root, file)
