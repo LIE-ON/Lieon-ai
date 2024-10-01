@@ -41,8 +41,8 @@ def move_files(file_pairs, target_audio_dir, target_label_dir, temp_data_dir):
 
 
 def main():
-    base_dir = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/'
-    temp_data_dir = os.path.join(base_dir, '[Temp]total_data')
+    base_dir = '/Users/imdohyeon/Downloads/[Temp]total_data'
+    temp_data_dir = os.path.join(base_dir, 'Augmented')
     train_audio_dir = os.path.join(base_dir, 'Train/Audio'); train_label_dir = os.path.join(base_dir, 'Train/Label')
     val_audio_dir = os.path.join(base_dir, 'Val/Audio'); val_label_dir = os.path.join(base_dir, 'Val/Label')
     test_audio_dir = os.path.join(base_dir, 'Test/Audio'); test_label_dir = os.path.join(base_dir, 'Test/Label')
