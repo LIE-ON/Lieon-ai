@@ -41,7 +41,7 @@ def move_files(file_pairs, target_audio_dir, target_label_dir, temp_data_dir):
 
 
 def main():
-    base_dir = '/Users/imdohyeon/Library/CloudStorage/GoogleDrive-dhlim1598@gmail.com/.shortcut-targets-by-id/1GKf6cKNuFHdu7j8BO1RrBifSerASlNG8/LIEON_DATA/'
+    base_dir = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/'
     temp_data_dir = os.path.join(base_dir, '[Temp]total_data')
     train_audio_dir = os.path.join(base_dir, 'Train/Audio'); train_label_dir = os.path.join(base_dir, 'Train/Label')
     val_audio_dir = os.path.join(base_dir, 'Val/Audio'); val_label_dir = os.path.join(base_dir, 'Val/Label')
