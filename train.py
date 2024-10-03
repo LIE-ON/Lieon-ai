@@ -1,5 +1,3 @@
-# train3.py
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -98,14 +96,14 @@ def main():
     print(f'사용 중인 디바이스: {device}')
 
     # 데이터 디렉토리 설정
-    wav_dir_train = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/Train/Audio'
-    label_dir_train = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/Train/Label'
+    wav_dir_train = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/Dataset/Train/Audio'
+    label_dir_train = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/Dataset/Train/Label'
 
-    wav_dir_val = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/Val/Audio'
-    label_dir_val = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/Val/Label'
+    wav_dir_val = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/Dataset/Val/Audio'
+    label_dir_val = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/Dataset/Val/Label'
 
-    wav_dir_test = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/Test/Audio'
-    label_dir_test = 'C:/Workspace-DoHyeonLim/PythonWorkspace/Lieon-ai/Dataset/Test/Label'
+    wav_dir_test = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/Dataset/Test/Audio'
+    label_dir_test = '/Users/imdohyeon/Documents/PythonWorkspace/Lieon-ai/Dataset/Test/Label'
 
     # 데이터 로드
     wav_paths_train, label_paths_train = get_file_paths(wav_dir_train, label_dir_train)
@@ -177,7 +175,7 @@ def main():
     print(f'Test Accuracy: {test_accuracy:.4f}, Test F1 Score: {test_f1:.4f}')
 
     # 모델 저장
-    model_path = 'esn_model_train3.pth'
+    model_path = 'esn_model_train_m2_50hr.pth'
     torch.save(model.state_dict(), model_path)
     print(f'The model saved as {model_path}.')
 
