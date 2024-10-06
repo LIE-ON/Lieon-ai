@@ -6,31 +6,6 @@ from Preprocessing.label import labeling
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-import os
-import boto3
-import tempfile
-
-s3 = boto3.client('s3')
-
-
-def download_s3_file(s3_path, local_dir="/tmp"):
-    """
-    S3 경로에서 파일을 로컬로 다운로드
-    :param s3_path: S3 파일 경로 (s3://bucket/key)
-    :param local_dir: 로컬에 저장할 디렉토리
-    :return: 로컬 파일 경로
-    """
-    # S3 경로에서 버킷명과 키 추출
-    s3_path = s3_path.replace("s3://", "")
-    bucket, key = s3_path.split('/', 1)
-
-    # 로컬 파일 경로 설정
-    local_file_path = os.path.join(local_dir, os.path.basename(key))
-
-    # S3에서 파일 다운로드
-    s3.download_file(bucket, key, local_file_path)
-    return local_file_path
-
 
 class WAVDataset(Dataset):
     def __init__(self, wav_path, label_path, max_length):
@@ -62,10 +37,8 @@ class WAVDataset(Dataset):
         :return: 피처 데이터(X)와 라벨(y)을 텐서 형태로 반환
         """
         wav_path = self.wav_path[idx]
-        wav_s3_path = download_s3_file(wav_path)
-        y, sr = librosa.load(wav_s3_path, sr=44100)
+        y, sr = librosa.load(wav_path, sr=44100)
         label_path = self.label_path[idx]
-        label_s3_path = download_s3_file(label_path)
 
         # Preprocessing 과정
         mfcc = features.extract_mfcc(y, sr)
@@ -73,7 +46,7 @@ class WAVDataset(Dataset):
         f0_pyworld = features.extract_f0_pyworld(y, sr)
         spectral_flux = features.extract_spectral_flux(y, sr)
         spectral_entropy = features.extract_spectral_entropy(y, sr)
-        labeled = labeling(label_s3_path, y, sr)
+        labeled = labeling(label_path, y, sr)
 
         # 추출된 feature 병합한 dataframe을 concated_df로 선언 후, return
         # 피처 병합
