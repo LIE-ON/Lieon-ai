@@ -20,63 +20,28 @@ def get_file_paths(wav_dir, label_dir):
     return wav_paths, label_paths
 
 
-def train(model, train_loader, criterion, optimizer, device):
-    model.train()
-    all_preds = []
-    all_labels = []
-    total_loss = 0
-    for X, y in train_loader:
-        X = X.to(device)
-        y = y.to(device)
-
-        batch_size_actual = X.size(0)
-        washout = torch.zeros(batch_size_actual, dtype=torch.int64).to(device)
-
-        outputs, _ = model(X, washout=washout)
-
-        outputs = outputs.reshape(-1, model.output_size)
-        y = y.reshape(-1)
-
-        _, predicted = torch.max(outputs, 1)
-        all_preds.extend(predicted.cpu().numpy())
-        all_labels.extend(y.cpu().numpy())
-
-        loss = criterion(outputs, y)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        total_loss += loss.item()
-    avg_loss = total_loss / len(train_loader)
-    accuracy = accuracy_score(all_labels, all_preds)
-    f1 = f1_score(all_labels, all_preds, average='weighted')
-    return avg_loss, accuracy, f1
-
-
 def evaluate(model, data_loader, device):
     model.eval()
-    all_preds = []
-    all_labels = []
+
+    all_targets = []
+    all_predictions = []
+
     with torch.no_grad():
-        for X, y in data_loader:
-            X = X.to(device)
-            y = y.to(device)
+        for inputs, targets in data_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
 
-            batch_size_actual = X.size(0)
-            washout = torch.zeros(batch_size_actual, dtype=torch.int64).to(device)
+            # ESN 모델의 forward를 통해 출력 얻기
+            outputs = model(inputs)
 
-            outputs, _ = model(X, washout=washout)
+            # 가장 높은 확률을 가진 클래스를 예측
+            _, predictions = torch.max(outputs, 1)
 
-            outputs = outputs.reshape(-1, model.output_size)
-            y = y.reshape(-1)
+            all_targets.extend(targets.cpu().numpy())  # 정답
+            all_predictions.extend(predictions.cpu().numpy())  # 예측값
 
-            _, predicted = torch.max(outputs, 1)
-            all_preds.extend(predicted.cpu().numpy())
-            all_labels.extend(y.cpu().numpy())
+    accuracy = accuracy_score(all_targets, all_predictions)
+    f1 = f1_score(all_targets, all_predictions, average='weighted')  # 다중 클래스일 경우 weighted 사용
 
-    accuracy = accuracy_score(all_labels, all_preds)
-    f1 = f1_score(all_labels, all_preds, average='weighted')
     return accuracy, f1
 
 
@@ -87,8 +52,8 @@ def main():
     output_size = 2  # 가해자(1), 피해자(0)
     num_layers = 1
     learning_rate = 0.001
-    num_epochs = 10
-    batch_size = 16
+    num_epochs = 20
+    batch_size = 64
     max_length = 500  # 시퀀스 최대 길이
 
     # 디바이스 설정 (GPU 사용 여부)
@@ -157,27 +122,29 @@ def main():
     print(f"Validation dataset size: {len(val_loader.dataset)}")
     print(f"Test dataset size: {len(test_loader.dataset)}")
 
-    # 손실 함수 및 최적화기 설정
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-    # 학습 및 검증
+    # ESN 학습을 위한 데이터 준비 (순차 데이터)
     for epoch in range(num_epochs):
-        print(f'Epoch [{epoch + 1}/{num_epochs}], ')
-        train_loss, train_accuracy, train_f1 = train(model, train_loader, criterion, optimizer, device)
+        print(f'Epoch [{epoch + 1}/{num_epochs}]')
+
+        for inputs, targets in train_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+
+            # ESN 모델의 fit 메소드를 사용하여 학습
+            model.fit(inputs, targets)  # fit을 통해 readout layer 학습
+
+        # Evaluate
         val_accuracy, val_f1 = evaluate(model, val_loader, device)
+        print(f'Validation Accuracy: {val_accuracy:.4f}, Validation F1 Score: {val_f1:.4f}')
 
-        print(f'Training Loss: {train_loss:.4f}, Training Accuracy: {train_accuracy:.4f}, Training F1 Score: {train_f1:.4f},'
-              f'Validation Accuracy: {val_accuracy:.4f}, Validation F1 Score: {val_f1:.4f}')
-
-    # 테스트
+    # 테스트 데이터 평가
     test_accuracy, test_f1 = evaluate(model, test_loader, device)
     print(f'Test Accuracy: {test_accuracy:.4f}, Test F1 Score: {test_f1:.4f}')
 
     # 모델 저장
-    model_path = 'esn_model_train_m2_50hr.pth'
+    model_path = 'esn_g4dn2xlarge_50hr.pth'
     torch.save(model.state_dict(), model_path)
     print(f'The model saved as {model_path}.')
+
 
 if __name__ == '__main__':
     main()
