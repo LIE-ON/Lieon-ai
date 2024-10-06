@@ -7,7 +7,9 @@ import librosa
 import numpy as np
 import pandas as pd
 # import parselmouth
-from scipy.signal import find_peaks, lfilter, hamming
+# from scipy.signal import find_peaks, lfilter, hamming
+from scipy.signal import find_peaks, lfilter
+from scipy.signal.windows import hamming
 from scipy.io import wavfile
 from scipy.fftpack import fft
 from sklearn.preprocessing import MinMaxScaler
