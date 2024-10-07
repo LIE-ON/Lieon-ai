@@ -1,19 +1,35 @@
 import torch
-import os
 from Preprocessing.preprocessing import create_dataloader
 from Classifier.nn.esn import ESN
 import time
+import boto3
 
 
 def get_file_paths(wav_dir, label_dir):
-    wav_files = [file for file in os.listdir(wav_dir) if file.endswith('.wav')]
-    wav_files.sort()  # 파일 이름을 정렬하여 매칭을 보장
-    label_files = [file for file in os.listdir(label_dir) if file.endswith('.csv')]
-    label_files.sort()
+    s3 = boto3.client('s3')
 
-    wav_paths = [os.path.join(wav_dir, file) for file in wav_files]
-    label_paths = [os.path.join(label_dir, file) for file in label_files]
-    return wav_paths, label_paths
+    # S3 경로에서 버킷명과 경로를 분리
+    wav_dir = wav_dir.replace("s3://", "")
+    label_dir = label_dir.replace("s3://", "")
+
+    wav_bucket, wav_prefix = wav_dir.split('/', 1)
+    label_bucket, label_prefix = label_dir.split('/', 1)
+
+    # WAV 파일 목록 가져오기
+    wav_files = []
+    response = s3.list_objects_v2(Bucket=wav_bucket, Prefix=wav_prefix)
+    for obj in response.get('Contents', []):
+        if obj['Key'].endswith('.wav'):
+            wav_files.append(f"s3://{wav_bucket}/{obj['Key']}")
+
+    # 라벨 파일 목록 가져오기
+    label_files = []
+    response = s3.list_objects_v2(Bucket=label_bucket, Prefix=label_prefix)
+    for obj in response.get('Contents', []):
+        if obj['Key'].endswith('.csv'):
+            label_files.append(f"s3://{label_bucket}/{obj['Key']}")
+
+    return wav_files, label_files
 
 
 def accuracy_correct(y_pred, y_true):
@@ -51,7 +67,6 @@ def main():
     wav_paths_train, label_paths_train = get_file_paths(wav_dir_train, label_dir_train)
     wav_paths_val, label_paths_val = get_file_paths(wav_dir_val, label_dir_val)
     wav_paths_test, label_paths_test = get_file_paths(wav_dir_test, label_dir_test)
-    print('get_file_paths 실행 완료')
 
     # DataLoader 생성
     train_loader = create_dataloader(
@@ -65,7 +80,6 @@ def main():
     test_loader = create_dataloader(
         wav_path=wav_paths_test, label_path=label_paths_test, max_length=max_length,
         batch_size=batch_size, shuffle=False)
-    print('create_dataloader 실행 완료')
 
     # 모델 초기화 및 디바이스 이동
     model = ESN(
@@ -75,7 +89,6 @@ def main():
         lambda_reg=0.0, density=1.0, w_io=False,
         readout_training='gd', output_steps='all'
     ).to(device)
-    print('ESN 초기화 완료')
 
     # ESN 학습을 위한 데이터 준비 (순차 데이터)
     for epoch in range(num_epochs):
@@ -123,13 +136,13 @@ if __name__ == '__main__':
     loss_fcn = accuracy_correct
 
     # SageMaker에서 제공하는 데이터 경로 사용
-    wav_dir_train = '/opt/ml/input/data/train_audio/'
-    label_dir_train = '/opt/ml/input/data/train_label/'
+    wav_dir_train = 's3://lieon-data/Dataset/Train/Audio'
+    label_dir_train = 's3://lieon-data/Dataset/Train/Label'
 
-    wav_dir_val = '/opt/ml/input/data/val_audio/'
-    label_dir_val = '/opt/ml/input/data/val_label/'
+    wav_dir_val = 's3://lieon-data/Dataset/Val/Audio'
+    label_dir_val = 's3://lieon-data/Dataset/Val/Label'
 
-    wav_dir_test = '/opt/ml/input/data/test_audio/'
-    label_dir_test = '/opt/ml/input/data/test_label/'
+    wav_dir_test = 's3://lieon-data/Dataset/Test/Audio'
+    label_dir_test = 's3://lieon-data/Dataset/Test/Label'
 
     main()

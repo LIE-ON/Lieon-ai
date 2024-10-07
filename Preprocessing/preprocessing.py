@@ -8,7 +8,6 @@ from torch.utils.data import Dataset, DataLoader
 
 import os
 import boto3
-import tempfile
 
 s3 = boto3.client('s3')
 
@@ -16,20 +15,25 @@ s3 = boto3.client('s3')
 def download_s3_file(s3_path, local_dir="/tmp"):
     """
     S3 경로에서 파일을 로컬로 다운로드
-    :param s3_path: S3 파일 경로 (s3://bucket/key)
+    :param s3_path: S3 파일 경로 (s3://bucket/key) 또는 로컬 파일 경로
     :param local_dir: 로컬에 저장할 디렉토리
     :return: 로컬 파일 경로
     """
-    # S3 경로에서 버킷명과 키 추출
-    s3_path = s3_path.replace("s3://", "")
-    bucket, key = s3_path.split('/', 1)
+    if s3_path.startswith("s3://"):
+        # S3 경로에서 버킷명과 키 추출
+        s3_path = s3_path.replace("s3://", "")
+        bucket, key = s3_path.split('/', 1)
+        # print('bucket:', bucket, ', key:', key) debugging code
 
-    # 로컬 파일 경로 설정
-    local_file_path = os.path.join(local_dir, os.path.basename(key))
+        # 로컬 파일 경로 설정
+        local_file_path = os.path.join(local_dir, os.path.basename(key))
 
-    # S3에서 파일 다운로드
-    s3.download_file(bucket, key, local_file_path)
-    return local_file_path
+        # S3에서 파일 다운로드
+        s3.download_file(bucket, key, local_file_path)
+        return local_file_path
+    else:
+        # 로컬 경로일 경우
+        return s3_path
 
 
 class WAVDataset(Dataset):
