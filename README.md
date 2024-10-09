@@ -1,5 +1,5 @@
 # Lieon-ai
-Explainable Real-time Voice Phishing(Lie) Classifier using Echo State Networks and LIME
+Real-time Voice Phishing(Lie) Classifier using Echo State Networks
 <br><br>
 <img width="1070" alt="architecture" src="https://github.com/LIE-ON/Lieon-ai/assets/94499717/df8a1c03-f246-4754-be18-517897ecdb1e">
 
@@ -49,11 +49,10 @@ We conducted a data generation experiment using the two models below:</del></p>
 <ul>
  <li>A specific kind of recurrent neural network (RNN) designed to efficiently handle sequential data based on Reservoir Computing.</li>
 </ul>
-<br><br>
-<p><strong>Explainer : LIME(Local Interpretable Model-agnostic Explanation)</strong></p>
 <br>
 
 ## Evaulation (ongoing)
+<strong>TBA (optimizing)</strong>
 <ul>
  <li>Accuracy</li>
  <li>F1 Score</li>
