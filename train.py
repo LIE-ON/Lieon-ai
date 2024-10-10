@@ -95,13 +95,16 @@ def main():
         start = time.time()
         print(f'Epoch [{epoch + 1}/{num_epochs}]')
 
-        for inputs, targets in train_loader:
+        for batch_idx, (inputs, targets) in enumerate(train_loader):
             inputs, targets = inputs.to(device), targets.to(device)
             washout_list = [int(washout_rate * inputs.size(0))] * inputs.size(1)
 
             # ESN 모델의 fit 메소드를 사용하여 학습
             model(inputs, washout_list, None, targets)
             model.fit()  # fit을 통해 readout layer 학습
+
+            # fit 실행 횟수 증가 및 출력
+            print(f'--- Fit iteration [{batch_idx + 1}/{len(train_loader)}]')
 
         # Evaluate
         val_accuracy = evaluate(model, washout_rate, val_loader, device)
