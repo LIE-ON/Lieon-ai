@@ -51,11 +51,16 @@ def reduce_time_domain(y, n_fft=2048, hop_length=512):
     for i in range(n_frames):
         start = i * hop_length
         end = start + n_fft
-        window = y[start:end]
-        reduced_data[i] = np.mean(window)  # 또는 다른 특징 값 계산 가능
+        window = y[start:end].values if isinstance(y, pd.DataFrame) else y[start:end]
+
+        # 0과 1 중 더 많은 값으로 축소 (대다수 선택 방식)
+        if np.mean(window) > 0.5:
+            reduced_data[i] = 1
+        else:
+            reduced_data[i] = 0
 
     # 데이터프레임으로 변환
-    reduced_data_df = pd.DataFrame(reduced_data, columns=['Reduced_Value'])
+    reduced_data_df = pd.DataFrame(reduced_data, columns=['Label'])
     return reduced_data_df
 
 
