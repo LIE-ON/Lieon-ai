@@ -60,7 +60,7 @@ class WAVDataset(Dataset):
         :param idx: 인덱스
         ====================================================
         - Preprocessing (features.py 이용)
-        - 피처 병합 (merge_features 메서드 이용)
+        - 피처 병합
         - 피처 데이터(X)와 라벨(y) 분리
         ====================================================
         :return: 피처 데이터(X)와 라벨(y)을 텐서 형태로 반환
@@ -71,16 +71,14 @@ class WAVDataset(Dataset):
         label_path = self.label_path[idx]
         label_s3_path = download_s3_file(label_path)
 
-        # Preprocessing 과정
-        mfcc = features.extract_mfcc(y, sr)
-        pitch = features.extract_pitch(y, sr)
-        f0_pyworld = features.extract_f0_pyworld(y, sr)
-        spectral_flux = features.extract_spectral_flux(y, sr)
-        spectral_entropy = features.extract_spectral_entropy(y, sr)
-        labeled = labeling(label_s3_path, y, sr)
+        # 단일 데이터에 대해 피처 추출 및 pad_or_truncate 적용
+        mfcc = self.pad_or_truncate(features.extract_mfcc(y, sr).values)
+        pitch = self.pad_or_truncate(features.extract_pitch(y, sr).values)
+        f0_pyworld = self.pad_or_truncate(features.extract_f0_pyworld(y, sr).values)
+        spectral_flux = self.pad_or_truncate(features.extract_spectral_flux(y, sr).values)
+        spectral_entropy = self.pad_or_truncate(features.extract_spectral_entropy(y, sr).values)
+        labeled = self.pad_or_truncate(labeling(label_s3_path, y, sr).values)
 
-        # 추출된 feature 병합한 dataframe을 concated_df로 선언 후, return
-        # 피처 병합
         features_dict = {
             'mfcc': mfcc,
             'pitch': pitch,
@@ -89,40 +87,50 @@ class WAVDataset(Dataset):
             'spectral_entropy': spectral_entropy,
             'label': labeled
         }
+
         concatenated_df = self.merge_features(features_dict)
 
-        # pad_or_truncate 적용
-        X = self.pad_or_truncate(concatenated_df.values)
-
         # 라벨과 나머지 데이터 분리
-        y = X[:, -1]  # 마지막 열이 라벨 (수정금지)
-        X = X[:, :-1]  # 마지막 열을 제외한 나머지가 피처 데이터
+        X = concatenated_df.iloc[:, :-1]
+        y = concatenated_df.iloc[:, -1]
 
         # X와 y를 텐서로 변환
-        X = torch.tensor(X, dtype=torch.float32)
-        y = torch.tensor(y, dtype=torch.long)
+        X = torch.tensor(X.values, dtype=torch.float32)
+        y = torch.tensor(y.values, dtype=torch.long)
 
         return X, y
 
+    # 피처 병합 함수 (merge_features)를 통해 병합
     def merge_features(self, features_dict):
-        # 피처들을 하나의 데이터프레임으로 병합
         df_list = []
         for key, df in features_dict.items():
-            # 각 DataFrame의 행 수를 통일
             df_list.append(df)
-
-        # 열 방향으로 병합
         concatenated_df = pd.concat(df_list, axis=1)
+        concatenated_df = concatenated_df.fillna(0)  # NaN 값은 0으로 채웁니다.
         return concatenated_df
 
     def pad_or_truncate(self, features):
-        length, feature_dim = features.shape
+        """
+        피처별로 패딩 또는 잘라내기를 적용 (1차원 데이터 처리)
+        :param features: 피처 데이터 (1차원 배열 또는 Series)
+        :return: 패딩 또는 잘라내기 후의 1차원 데이터
+        """
+        # 피처 데이터가 Series일 경우 넘파이 배열로 변환
+        if isinstance(features, pd.Series):
+            features = features.values
+
+        length = len(features)
+
+        # max_length보다 크면 자르기
         if length > self.max_length:
             return features[:self.max_length]
+
+        # max_length보다 짧으면 패딩 추가
         elif length < self.max_length:
             pad_width = self.max_length - length
-            padding = np.zeros((pad_width, feature_dim))
-            return np.vstack((features, padding))
+            padding = np.zeros(pad_width)
+            return np.concatenate([features, padding])
+
         return features
 
 
