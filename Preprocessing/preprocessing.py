@@ -71,6 +71,9 @@ class WAVDataset(Dataset):
         label_path = self.label_path[idx]
         label_s3_path = download_s3_file(label_path)
 
+        # debugging code
+        print(f"Processing index: {idx + 1} / {len(self.wav_path)}")
+
         # 단일 데이터에 대해 피처 추출 및 pad_or_truncate 적용
         mfcc = self.pad_or_truncate(features.extract_mfcc(y, sr).values)
         pitch = self.pad_or_truncate(features.extract_pitch(y, sr).values)
@@ -80,12 +83,12 @@ class WAVDataset(Dataset):
         labeled = self.pad_or_truncate(labeling(label_s3_path, y, sr).values)
 
         features_dict = {
-            'mfcc': mfcc,
-            'pitch': pitch,
-            'f0_pyworld': f0_pyworld,
-            'spectral_flux': spectral_flux,
-            'spectral_entropy': spectral_entropy,
-            'label': labeled
+            'mfcc': pd.DataFrame(mfcc),
+            'pitch': pd.DataFrame(pitch),
+            'f0_pyworld': pd.DataFrame(f0_pyworld),
+            'spectral_flux': pd.DataFrame(spectral_flux),
+            'spectral_entropy': pd.DataFrame(spectral_entropy),
+            'label': pd.DataFrame(labeled)
         }
 
         concatenated_df = self.merge_features(features_dict)
@@ -111,30 +114,43 @@ class WAVDataset(Dataset):
 
     def pad_or_truncate(self, features):
         """
-        피처별로 패딩 또는 잘라내기를 적용 (1차원 데이터 처리)
-        :param features: 피처 데이터 (1차원 배열 또는 Series)
-        :return: 패딩 또는 잘라내기 후의 1차원 데이터
+        피처별로 패딩 또는 잘라내기를 적용 (다차원 데이터 처리)
+        :param features: 피처 데이터 (1차원 또는 2차원 배열)
+        :return: 패딩 또는 잘라내기 후의 데이터
         """
         # 피처 데이터가 Series일 경우 넘파이 배열로 변환
         if isinstance(features, pd.Series):
             features = features.values
 
-        length = len(features)
+        # 피처 데이터가 2차원 배열일 경우, 각 차원의 패딩을 맞추기 위한 코드
+        if features.ndim == 2:
+            length, feature_dim = features.shape
 
-        # max_length보다 크면 자르기
-        if length > self.max_length:
-            return features[:self.max_length]
+            # max_length보다 크면 자르기
+            if length > self.max_length:
+                return features[:self.max_length, :]
 
-        # max_length보다 짧으면 패딩 추가
-        elif length < self.max_length:
-            pad_width = self.max_length - length
-            padding = np.zeros(pad_width)
-            return np.concatenate([features, padding])
+            # max_length보다 짧으면 패딩 추가
+            elif length < self.max_length:
+                pad_width = self.max_length - length
+                padding = np.zeros((pad_width, feature_dim))
+                return np.concatenate([features, padding], axis=0)
+
+        # 1차원 배열일 경우 기존 방식 사용
+        else:
+            length = len(features)
+
+            if length > self.max_length:
+                return features[:self.max_length]
+            elif length < self.max_length:
+                pad_width = self.max_length - length
+                padding = np.zeros(pad_width)
+                return np.concatenate([features, padding])
 
         return features
 
 
 def create_dataloader(wav_path, label_path, max_length, batch_size, shuffle=True):
     dataset = WAVDataset(wav_path, label_path, max_length)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=8, shuffle=shuffle)
     return dataloader
