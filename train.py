@@ -3,6 +3,7 @@ from Preprocessing.preprocessing import create_dataloader
 from Classifier.nn.esn import ESN
 import time
 import boto3
+from sklearn.metrics import accuracy_score, f1_score
 
 
 def get_file_paths(wav_dir, label_dir):
@@ -32,34 +33,39 @@ def get_file_paths(wav_dir, label_dir):
     return wav_files, label_files
 
 
-def accuracy_correct(y_pred, y_true):
-    labels = torch.argmax(y_pred, 1).type(y_pred.type())
-    correct = len((labels == y_true).nonzero())
-    return correct
-
-
 def evaluate(model, washout_rate, data_loader, device):
     model.eval()
-
-    all_targets = 0
-    all_predictions = 0
+    all_targets = []
+    all_predictions = []
 
     with torch.no_grad():
         for inputs, targets in data_loader:
             inputs, targets = inputs.to(device), targets.to(device)
-            washout_list = [int(washout_rate * inputs.size(0))] * inputs.size(1)
+            seq_len = inputs.size(1)
+            washout_length = int(washout_rate * seq_len)
+            washout_list = [washout_length] * inputs.size(0)
 
-            # ESN 모델의 forward를 통해 출력 얻기
-            outputs, hidden = model(inputs, washout_list)
+            # Get the model's outputs
+            outputs, _ = model(inputs, washout_list)
 
-            # 가장 높은 확률을 가진 클래스를 예측
-            _, predictions = torch.max(outputs, 1)
+            # Trim the targets to match the outputs
+            trimmed_targets = targets[:, washout_length:]
 
-            all_targets += inputs.size(1)
-            all_predictions += loss_fcn(outputs[-1], targets.type(torch.get_default_dtype()))
+            # Aggregate outputs and targets as needed
+            mean_outputs = torch.mean(outputs, dim=1)
+            predicted = mean_outputs.argmax(dim=1)
+            true_labels = trimmed_targets[:, -1]  # Use last label or adjust as needed
 
-    eval_acc = all_predictions / all_targets
-    return eval_acc
+            # Append predictions and true labels for accuracy and F1 calculation
+            all_predictions.extend(predicted.cpu().numpy())
+            all_targets.extend(true_labels.cpu().numpy())
+
+    # Calculate accuracy and F1 score
+    accuracy = accuracy_score(all_targets, all_predictions)
+    f1 = f1_score(all_targets, all_predictions, average='weighted')  # weighted for multi-class
+
+    print(f"Accuracy: {accuracy:.4f}, F1 Score: {f1:.4f}")
+    return accuracy, f1
 
 
 def main():
@@ -84,10 +90,11 @@ def main():
     # 모델 초기화 및 디바이스 이동
     model = ESN(
         input_size=input_size, hidden_size=hidden_size, output_size=output_size,
-        num_layers=num_layers, nonlinearity='tanh', batch_first=True,
-        leaking_rate=1.0, spectral_radius=0.9, w_ih_scale=1.0,
-        lambda_reg=0.0, density=1.0, w_io=False,
-        readout_training='gd', output_steps='all'
+        num_layers=num_layers,
+        batch_first=True,
+        w_io=False,
+        leaking_rate=1.0, spectral_radius=0.9, w_ih_scale=1.0, lambda_reg=0.0, density=1.0,
+        nonlinearity='tanh', readout_training='svd', output_steps='all'
     ).to(device)
 
     # ESN 학습을 위한 데이터 준비 (순차 데이터)
@@ -95,29 +102,46 @@ def main():
         start = time.time()
         print(f'Epoch [{epoch + 1}/{num_epochs}]')
 
-        for batch_idx, (inputs, targets) in enumerate(train_loader):
+        # Reset the matrices used for training the readout layer
+        model.XTX = None
+        model.XTy = None
+
+        for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
-            washout_list = [int(washout_rate * inputs.size(0))] * inputs.size(1)
+            seq_len = inputs.size(1)
+            washout_list = [int(washout_rate * seq_len)] * inputs.size(0)
 
-            # ESN 모델의 fit 메소드를 사용하여 학습
-            model(inputs, washout_list, None, targets)
-            model.fit()  # fit을 통해 readout layer 학습
+            # Prepare the targets by trimming the washout period
+            trimmed_targets = targets[:, washout_list[0]:]
 
-            # fit 실행 횟수 증가 및 출력
-            print(f'--- Fit iteration [{batch_idx + 1}/{len(train_loader)}]')
+            # Reshape targets to match the expected dimensions
+            # For classification, targets might need to be one-hot encoded
+            target_sequence = trimmed_targets.reshape(-1, 1).float()
 
-        # Evaluate
+            # Forward pass with targets for offline training
+            model(inputs, washout_list, None, target_sequence)
+
+        # After processing all batches, fit the readout layer
+        model.fit()
+
+        # Evaluate on the validation set
         val_accuracy = evaluate(model, washout_rate, val_loader, device)
         print(f'Validation Accuracy: {val_accuracy:.4f}')
 
         print("Epoch", epoch + 1, ": Ended in", time.time() - start, "seconds.")
 
     # 테스트 데이터 평가
-    test_accuracy = evaluate(model, washout_rate, test_loader, device)
-    print(f'Test Accuracy: {test_accuracy:.4f}')
+    # Validation
+    val_accuracy, val_f1 = evaluate(model, washout_rate, val_loader, device)
+    print(f'Validation Accuracy: {val_accuracy:.4f}, Validation F1 Score: {val_f1:.4f}')
+
+    # Testing
+    test_accuracy, test_f1 = evaluate(model, washout_rate, test_loader, device)
+    print(f'Test Accuracy: {test_accuracy:.4f}, Test F1 Score: {test_f1:.4f}')
+
 
     # 모델 저장
-    model_path = '/opt/ml/model/esn_model_g4dn2xlarge_50hr.pth'
+    model_path = 'esn_model_test1109.pth'
     torch.save(model.state_dict(), model_path)
     print(f'The model saved as {model_path}.')
 
@@ -129,14 +153,13 @@ if __name__ == '__main__':
 
     # 하이퍼파라미터 설정
     input_size = 24  # MFCC 20개 + Pitch 1개 + F0 1개 + Spectral Flux 1개 + Spectral Entropy 1개 (총 24개)
-    hidden_size = 500
+    hidden_size = 850
     output_size = 2  # 가해자(1), 피해자(0)
     washout_rate = 0.2
     num_layers = 1
     num_epochs = 10
-    batch_size = 64
-    max_length = 500  # 시퀀스 최대 길이
-    loss_fcn = accuracy_correct
+    batch_size =2048
+    max_length = 850  # 시퀀스 최대 길이
 
     # SageMaker에서 제공하는 데이터 경로 사용
     wav_dir_train = 's3://lieon-data/Dataset/Train/Audio'
