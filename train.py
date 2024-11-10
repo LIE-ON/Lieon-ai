@@ -45,26 +45,24 @@ def evaluate(model, washout_rate, data_loader, device):
             washout_length = int(washout_rate * seq_len)
             washout_list = [washout_length] * inputs.size(0)
 
-            # Get the model's outputs
+            # 모델의 출력 얻기
             outputs, _ = model(inputs, washout_list)
 
-            # Trim the targets to match the outputs
+            # 타겟을 출력과 맞추기 위해 자르기
             trimmed_targets = targets[:, washout_length:]
 
-            # Aggregate outputs and targets as needed
+            # 평균값 계산 후 예측 클래스 선택
             mean_outputs = torch.mean(outputs, dim=1)
             predicted = mean_outputs.argmax(dim=1)
-            true_labels = trimmed_targets[:, -1]  # Use last label or adjust as needed
+            true_labels = trimmed_targets[:, -1]  # 마지막 라벨 사용
 
-            # Append predictions and true labels for accuracy and F1 calculation
+            # 예측값과 실제 정답을 리스트에 추가
             all_predictions.extend(predicted.cpu().numpy())
             all_targets.extend(true_labels.cpu().numpy())
 
-    # Calculate accuracy and F1 score
+    # 정확도와 F1 스코어 계산
     accuracy = accuracy_score(all_targets, all_predictions)
-    f1 = f1_score(all_targets, all_predictions, average='weighted')  # weighted for multi-class
-
-    print(f"Accuracy: {accuracy:.4f}, F1 Score: {f1:.4f}")
+    f1 = f1_score(all_targets, all_predictions, average='weighted')
     return accuracy, f1
 
 
@@ -124,21 +122,15 @@ def main():
         # After processing all batches, fit the readout layer
         model.fit()
 
-        # Evaluate on the validation set
-        val_accuracy = evaluate(model, washout_rate, val_loader, device)
-        print(f'Validation Accuracy: {val_accuracy:.4f}')
+        # Validation set 평가
+        val_accuracy, val_f1 = evaluate(model, washout_rate, val_loader, device)
+        print(f'Validation Accuracy: {val_accuracy:.4f}, Validation F1 Score: {val_f1:.4f}')
 
         print("Epoch", epoch + 1, ": Ended in", time.time() - start, "seconds.")
 
     # 테스트 데이터 평가
-    # Validation
-    val_accuracy, val_f1 = evaluate(model, washout_rate, val_loader, device)
-    print(f'Validation Accuracy: {val_accuracy:.4f}, Validation F1 Score: {val_f1:.4f}')
-
-    # Testing
     test_accuracy, test_f1 = evaluate(model, washout_rate, test_loader, device)
     print(f'Test Accuracy: {test_accuracy:.4f}, Test F1 Score: {test_f1:.4f}')
-
 
     # 모델 저장
     model_path = 'esn_model_test1109.pth'
