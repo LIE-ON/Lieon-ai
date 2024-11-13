@@ -1,7 +1,7 @@
 # Lieon-ai
 Real-time Voice Phishing(Lie) Classifier using Echo State Networks
 <br><br>
-<img width="1070" alt="architecture" src="https://github.com/user-attachments/assets/37a04bbe-ee7b-4ecd-b0ec-c9eaa7bf8909">
+<img width="100%" alt="architecture" src="https://github.com/user-attachments/assets/37a04bbe-ee7b-4ecd-b0ec-c9eaa7bf8909">
 
 ## Requirements
 <p>All code was written in <strong>Python>=3.7.</strong></p>
