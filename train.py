@@ -77,22 +77,21 @@ def evaluate(model, washout_rate, data_loader, device):
             washout_length = int(washout_rate * seq_len)
             washout_list = [washout_length] * inputs.size(0)
 
-            # Get the model's outputs
+            # 모델의 출력 얻기
             outputs, _ = model(inputs, washout_list)
 
-            # Trim the targets to match the outputs
+            # 타겟을 출력과 맞추기 위해 자르기
             trimmed_targets = targets[:, washout_length:]
 
-            # Aggregate outputs and targets as needed
-            # For classification, you might take the mean or last output
+            # 평균값 계산 후 예측 클래스 선택
             mean_outputs = torch.mean(outputs, dim=1)
             predicted = mean_outputs.argmax(dim=1)
-            true_labels = trimmed_targets[:, -1]  # Use last label or adjust as needed
+            true_labels = trimmed_targets[:, -1]  # 마지막 라벨 사용
 
             all_predictions.extend(predicted.cpu().detach().numpy())
             all_targets.extend(true_labels.cpu().detach().numpy())
 
-    # accuracy_and_f1-score
+    # 정확도와 F1 스코어 계산
     accuracy = accuracy_score(all_targets, all_predictions)
     f1 = f1_score(all_targets, all_predictions, average='weighted')
     return accuracy, f1
@@ -169,7 +168,6 @@ def main():
         if epoch == num_epochs - 1:  # Only perform readout training after the last epoch
             model.fit()
 
-        # Evaluate on the validation set
         val_accuracy, val_f1 = evaluate(model, washout_rate, val_loader, device)
         print(f'Validation Accuracy: {val_accuracy:.4f}, Validation F1 Score: {val_f1:.4f}')
 
