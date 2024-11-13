@@ -1,11 +1,42 @@
 import torch
-from Preprocessing.preprocessing import create_dataloader
+# from Preprocessing.preprocessing import create_dataloader
+from torch.utils.data import DataLoader
+from Preprocessing.preprocessed_dataset import PreprocessedDataset
+from sklearn.metrics import accuracy_score, f1_score
 from Classifier.nn.esn import ESN
 import time
 import boto3
-from sklearn.metrics import accuracy_score, f1_score
+import os
 
 
+s3 = boto3.client('s3')
+
+
+def download_s3_file(s3_path, local_dir="/tmp"):
+    """
+    S3 경로에서 파일을 로컬로 다운로드
+    :param s3_path: S3 파일 경로 (s3://bucket/key) 또는 로컬 파일 경로
+    :param local_dir: 로컬에 저장할 디렉토리
+    :return: 로컬 파일 경로
+    """
+    if s3_path.startswith("s3://"):
+        # S3 경로에서 버킷명과 키 추출
+        s3_path = s3_path.replace("s3://", "")
+        bucket, key = s3_path.split('/', 1)
+        # print('bucket:', bucket, ', key:', key) debugging code
+
+        # 로컬 파일 경로 설정
+        local_file_path = os.path.join(local_dir, os.path.basename(key))
+
+        # S3에서 파일 다운로드
+        s3.download_file(bucket, key, local_file_path)
+        return local_file_path
+    else:
+        # 로컬 경로일 경우
+        return s3_path
+
+
+"""
 def get_file_paths(wav_dir, label_dir):
     s3 = boto3.client('s3')
 
@@ -31,6 +62,7 @@ def get_file_paths(wav_dir, label_dir):
             label_files.append(f"s3://{label_bucket}/{obj['Key']}")
 
     return wav_files, label_files
+"""
 
 
 def evaluate(model, washout_rate, data_loader, device):
@@ -56,9 +88,8 @@ def evaluate(model, washout_rate, data_loader, device):
             predicted = mean_outputs.argmax(dim=1)
             true_labels = trimmed_targets[:, -1]  # 마지막 라벨 사용
 
-            # 예측값과 실제 정답을 리스트에 추가
-            all_predictions.extend(predicted.cpu().numpy())
-            all_targets.extend(true_labels.cpu().numpy())
+            all_predictions.extend(predicted.cpu().detach().numpy())
+            all_targets.extend(true_labels.cpu().detach().numpy())
 
     # 정확도와 F1 스코어 계산
     accuracy = accuracy_score(all_targets, all_predictions)
@@ -68,6 +99,7 @@ def evaluate(model, washout_rate, data_loader, device):
 
 def main():
     # 데이터 로드
+    """
     wav_paths_train, label_paths_train = get_file_paths(wav_dir_train, label_dir_train)
     wav_paths_val, label_paths_val = get_file_paths(wav_dir_val, label_dir_val)
     wav_paths_test, label_paths_test = get_file_paths(wav_dir_test, label_dir_test)
@@ -84,6 +116,19 @@ def main():
     test_loader = create_dataloader(
         wav_path=wav_paths_test, label_path=label_paths_test, max_length=max_length,
         batch_size=batch_size, shuffle=False)
+    """
+    wav_path_train = download_s3_file(wav_dir_train)
+    wav_path_val = download_s3_file(wav_dir_val)
+    wav_path_test = download_s3_file(wav_dir_test)
+    
+    train_dataset = PreprocessedDataset(wav_path_train)
+    val_dataset = PreprocessedDataset(wav_path_val)
+    test_dataset = PreprocessedDataset(wav_path_test)
+    
+    # dataloader
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
 
     # 모델 초기화 및 디바이스 이동
     model = ESN(
@@ -104,6 +149,7 @@ def main():
         model.XTX = None
         model.XTy = None
 
+        # Training loop: update the internal states of the model using the training data
         for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
             seq_len = inputs.size(1)
@@ -113,16 +159,15 @@ def main():
             trimmed_targets = targets[:, washout_list[0]:]
 
             # Reshape targets to match the expected dimensions
-            # For classification, targets might need to be one-hot encoded
             target_sequence = trimmed_targets.reshape(-1, 1).float()
 
-            # Forward pass with targets for offline training
+            # Collect data for readout training (without updating weights yet)
             model(inputs, washout_list, None, target_sequence)
 
-        # After processing all batches, fit the readout layer
-        model.fit()
+        # Fit the readout layer once after processing all batches in the epoch
+        if epoch == num_epochs - 1:  # Only perform readout training after the last epoch
+            model.fit()
 
-        # Validation set 평가
         val_accuracy, val_f1 = evaluate(model, washout_rate, val_loader, device)
         print(f'Validation Accuracy: {val_accuracy:.4f}, Validation F1 Score: {val_f1:.4f}')
 
@@ -133,7 +178,7 @@ def main():
     print(f'Test Accuracy: {test_accuracy:.4f}, Test F1 Score: {test_f1:.4f}')
 
     # 모델 저장
-    model_path = 'esn_model_test1109.pth'
+    model_path = 'esn_model_test1111.pth'
     torch.save(model.state_dict(), model_path)
     print(f'The model saved as {model_path}.')
 
@@ -154,13 +199,8 @@ if __name__ == '__main__':
     max_length = 850  # 시퀀스 최대 길이
 
     # SageMaker에서 제공하는 데이터 경로 사용
-    wav_dir_train = 's3://lieon-data/Dataset/Train/Audio'
-    label_dir_train = 's3://lieon-data/Dataset/Train/Label'
-
-    wav_dir_val = 's3://lieon-data/Dataset/Val/Audio'
-    label_dir_val = 's3://lieon-data/Dataset/Val/Label'
-
-    wav_dir_test = 's3://lieon-data/Dataset/Test/Audio'
-    label_dir_test = 's3://lieon-data/Dataset/Test/Label'
+    wav_dir_train = 's3://lieon-data/Dataset/Train/preprocessed_train_data.pt'
+    wav_dir_val = 's3://lieon-data/Dataset/Val/preprocessed_val_data.pt'
+    wav_dir_test = 's3://lieon-data/Dataset/Test/preprocessed_test_data.pt'
 
     main()
