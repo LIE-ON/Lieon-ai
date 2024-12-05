@@ -42,7 +42,7 @@ Real-time Voice Phishing(Lie) Classifier using Echo State Networks
 </ul>
 <br>
 
-## Model (ongoing)
+## Model
 <p><strong>Classifier : Echo State Network</strong></p>
 <img width="540" src="https://github.com/user-attachments/assets/106042b5-dc88-474a-8013-058f4a150e21">
 <ul>
@@ -55,7 +55,6 @@ Real-time Voice Phishing(Lie) Classifier using Echo State Networks
 <p><strong>Performance Metrics</strong></p>
 <img src="https://github.com/user-attachments/assets/122ced5a-7397-4867-b596-643eb39bb07d">
 <p>The ESN-based model demonstrates superior performance compared to other machine learning and deep learning models, with significantly faster inference speed than deep learning models. However, due to the limited amount of data, the SVM outperformed the deep learning-based models (this trend is expected to reverse as the data size increases).</p>
-<br>
 <br>
 <p><strong>Hyperparameter</strong></p>
 <img src="https://github.com/user-attachments/assets/8d39f79a-2ae8-4983-975e-b9f1273eb28f">
