@@ -36,35 +36,6 @@ def download_s3_file(s3_path, local_dir="/tmp"):
         return s3_path
 
 
-"""
-def get_file_paths(wav_dir, label_dir):
-    s3 = boto3.client('s3')
-
-    # S3 경로에서 버킷명과 경로를 분리
-    wav_dir = wav_dir.replace("s3://", "")
-    label_dir = label_dir.replace("s3://", "")
-
-    wav_bucket, wav_prefix = wav_dir.split('/', 1)
-    label_bucket, label_prefix = label_dir.split('/', 1)
-
-    # WAV 파일 목록 가져오기
-    wav_files = []
-    response = s3.list_objects_v2(Bucket=wav_bucket, Prefix=wav_prefix)
-    for obj in response.get('Contents', []):
-        if obj['Key'].endswith('.wav'):
-            wav_files.append(f"s3://{wav_bucket}/{obj['Key']}")
-
-    # 라벨 파일 목록 가져오기
-    label_files = []
-    response = s3.list_objects_v2(Bucket=label_bucket, Prefix=label_prefix)
-    for obj in response.get('Contents', []):
-        if obj['Key'].endswith('.csv'):
-            label_files.append(f"s3://{label_bucket}/{obj['Key']}")
-
-    return wav_files, label_files
-"""
-
-
 def evaluate(model, washout_rate, data_loader, device):
     model.eval()
     all_targets = []
@@ -99,32 +70,14 @@ def evaluate(model, washout_rate, data_loader, device):
 
 def main():
     # 데이터 로드
-    """
-    wav_paths_train, label_paths_train = get_file_paths(wav_dir_train, label_dir_train)
-    wav_paths_val, label_paths_val = get_file_paths(wav_dir_val, label_dir_val)
-    wav_paths_test, label_paths_test = get_file_paths(wav_dir_test, label_dir_test)
-
-    # DataLoader 생성
-    train_loader = create_dataloader(
-        wav_path=wav_paths_train, label_path=label_paths_train, max_length=max_length,
-        batch_size=batch_size, shuffle=True)
-
-    val_loader = create_dataloader(
-        wav_path=wav_paths_val, label_path=label_paths_val, max_length=max_length,
-        batch_size=batch_size, shuffle=False)
-
-    test_loader = create_dataloader(
-        wav_path=wav_paths_test, label_path=label_paths_test, max_length=max_length,
-        batch_size=batch_size, shuffle=False)
-    """
     wav_path_train = download_s3_file(wav_dir_train)
     wav_path_val = download_s3_file(wav_dir_val)
     wav_path_test = download_s3_file(wav_dir_test)
-    
+
     train_dataset = PreprocessedDataset(wav_path_train)
     val_dataset = PreprocessedDataset(wav_path_val)
     test_dataset = PreprocessedDataset(wav_path_test)
-    
+
     # dataloader
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
